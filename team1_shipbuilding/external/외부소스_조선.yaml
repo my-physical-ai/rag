@@ -1,0 +1,30 @@
+# ════════════════════════════════════════
+# 🚢 1팀 (조선) — 외부 소스 추가분
+# 09_sources.yaml에 붙여넣기
+# ════════════════════════════════════════
+
+# ── rss_feeds 섹션 맨 아래에 추가 ──
+
+  - name: "Splash247 Shipping"
+    url: "https://splash247.com/feed/"
+    category: industry_news
+    max_results: 15
+
+  - name: "gCaptain Shipping News"
+    url: "https://gcaptain.com/feed/"
+    category: industry_news
+    max_results: 15
+
+# ── google_news_topics 섹션 맨 아래에 추가 ──
+
+  - name: "Smart Shipyard AI"
+    query: '("smart shipyard" OR "digital shipyard" OR "조선 AI" OR "스마트 조선소") when:7d'
+    max_results: 15
+    lang: ko
+    country: KR
+
+  - name: "HD현대중공업 기술"
+    query: 'HD현대중공업 로봇 OR AI OR 자동화 when:7d'
+    max_results: 15
+    lang: ko
+    country: KR

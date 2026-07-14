@@ -1,0 +1,30 @@
+# ════════════════════════════════════════
+# 🏭 2팀 (제조) — 외부 소스 추가분
+# 09_sources.yaml에 붙여넣기
+# ════════════════════════════════════════
+
+# ── rss_feeds 섹션 맨 아래에 추가 ──
+
+  - name: "SME Manufacturing News"
+    url: "https://www.sme.org/feed/"
+    category: industry_news
+    max_results: 15
+
+  - name: "Modern Machine Shop"
+    url: "https://www.mmsonline.com/rss"
+    category: industry_news
+    max_results: 15
+
+# ── google_news_topics 섹션 맨 아래에 추가 ──
+
+  - name: "스마트팩토리 제조AI"
+    query: '(스마트팩토리 OR "제조 AI" OR "공장 자동화" OR "예지보전") when:7d'
+    max_results: 15
+    lang: ko
+    country: KR
+
+  - name: "CNC Robot Automation"
+    query: '("CNC automation" OR "manufacturing robot" OR "industrial AI") when:7d'
+    max_results: 15
+    lang: en-US
+    country: US

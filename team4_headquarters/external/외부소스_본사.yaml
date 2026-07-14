@@ -1,0 +1,30 @@
+# ════════════════════════════════════════
+# 🏢 4팀 (조선·제조 본사) — 외부 소스 추가분
+# 09_sources.yaml에 붙여넣기
+# ════════════════════════════════════════
+
+# ── rss_feeds 섹션 맨 아래에 추가 ──
+
+  - name: "McKinsey Operations Insights"
+    url: "https://www.mckinsey.com/industries/advanced-electronics/our-insights/rss"
+    category: industry_news
+    max_results: 15
+
+  - name: "Deloitte AI Institute"
+    url: "https://www2.deloitte.com/us/en/pages/deloitte-analytics/articles/advancing-human-ai-collaboration.html/rss"
+    category: industry_news
+    max_results: 15
+
+# ── google_news_topics 섹션 맨 아래에 추가 ──
+
+  - name: "조선 제조 AI전환"
+    query: '(조선 OR 제조업) (AI OR 인공지능 OR DX OR 디지털전환) when:7d'
+    max_results: 15
+    lang: ko
+    country: KR
+
+  - name: "Enterprise AI Strategy"
+    query: '("enterprise AI" OR "industrial AI strategy" OR "AI transformation") when:7d'
+    max_results: 15
+    lang: en-US
+    country: US

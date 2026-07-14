@@ -1,0 +1,30 @@
+# ════════════════════════════════════════
+# 📦 3팀 (물류) — 외부 소스 추가분
+# 09_sources.yaml에 붙여넣기
+# ════════════════════════════════════════
+
+# ── rss_feeds 섹션 맨 아래에 추가 ──
+
+  - name: "Logistics Management"
+    url: "https://www.logisticsmgmt.com/rss"
+    category: industry_news
+    max_results: 15
+
+  - name: "Supply Chain Dive"
+    url: "https://www.supplychaindive.com/feeds/news/"
+    category: industry_news
+    max_results: 15
+
+# ── google_news_topics 섹션 맨 아래에 추가 ──
+
+  - name: "물류 로봇 자동화"
+    query: '(물류 로봇 OR "warehouse robot" OR AGV OR AMR OR "자동화 물류") when:7d'
+    max_results: 15
+    lang: ko
+    country: KR
+
+  - name: "Warehouse Automation AI"
+    query: '("warehouse automation" OR "logistics AI" OR "autonomous mobile robot") when:7d'
+    max_results: 15
+    lang: en-US
+    country: US
