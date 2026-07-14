@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏫 4팀 실습 가이드 — AI 검색 시스템에 외부 지식 추가하기</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#2563EB;--blue-l:#DBEAFE;--purple:#7C3AED;--purple-l:#EDE9FE;
+  --green:#059669;--green-l:#D1FAE5;--orange:#D97706;--orange-l:#FEF3C7;
+  --red:#DC2626;--red-l:#FEE2E2;--teal:#0891B2;--teal-l:#CFFAFE;
+  --surface:#F8FAFC;--card:#FFFFFF;--text:#1E293B;--muted:#64748B;--border:#E2E8F0;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--surface);color:var(--text);line-height:1.8}
+code,pre{font-family:'JetBrains Mono',monospace}
+.container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+section{padding:2.5rem 0;border-bottom:1px solid var(--border)}
+section:last-of-type{border-bottom:none}
+
+.hero{background:linear-gradient(135deg,#1E3A8A,#7C3AED);color:white;padding:3.5rem 0;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-15%;width:500px;height:500px;background:radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%);border-radius:50%}
+.hero h1{font-size:2.2rem;font-weight:900;line-height:1.2;margin-bottom:0.6rem;position:relative}
+.hero p{font-size:1rem;opacity:0.9;max-width:600px;margin:0 auto;position:relative}
+
+.st{font-size:1.5rem;font-weight:900;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.6rem}
+.sd{font-size:0.9rem;color:var(--muted);margin-bottom:1.5rem}
+
+.card{background:var(--card);border-radius:14px;padding:1.3rem 1.6rem;box-shadow:0 3px 6px rgba(0,0,0,0.05);margin-bottom:1.2rem;border:1px solid var(--border)}
+.card h3{font-size:1rem;font-weight:800;margin-bottom:0.5rem}
+
+.tip{padding:0.9rem 1.3rem;border-radius:10px;margin-bottom:1.2rem;font-size:0.88rem;display:flex;gap:0.7rem;align-items:flex-start}
+.t-b{background:var(--blue-l);border-left:4px solid var(--blue)}
+.t-g{background:var(--green-l);border-left:4px solid var(--green)}
+.t-o{background:var(--orange-l);border-left:4px solid var(--orange)}
+.t-r{background:var(--red-l);border-left:4px solid var(--red)}
+.t-p{background:var(--purple-l);border-left:4px solid var(--purple)}
+.t-t{background:var(--teal-l);border-left:4px solid var(--teal)}
+.tip .ti{font-size:1.2rem;flex-shrink:0}
+
+pre.code{background:#1e293b;color:#e2e8f0;padding:1.1rem 1.3rem;border-radius:11px;overflow-x:auto;font-size:0.82rem;line-height:1.7;margin-bottom:1.2rem}
+pre.code .cm{color:#94a3b8}
+pre.code .hi{color:#86efac;font-weight:700}
+pre.code .kw{color:#c084fc}
+
+.step-box{border:2.5px solid var(--sc,var(--blue));border-radius:16px;padding:1.5rem 2rem;margin-bottom:1.5rem;background:color-mix(in srgb,var(--sc,var(--blue)) 4%,white)}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--sc,var(--blue));color:white;font-size:1rem;font-weight:900;margin-bottom:0.8rem}
+.step-title{font-size:1.1rem;font-weight:900;margin-bottom:0.3rem}
+.step-desc{font-size:0.88rem;color:var(--muted);margin-bottom:0.8rem}
+
+.team-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.8rem;margin-bottom:1.2rem}
+@media(max-width:768px){.team-grid{grid-template-columns:1fr}}
+.team-card{border-radius:12px;padding:1.2rem;border:2px solid var(--border);background:var(--card)}
+.team-badge{display:inline-block;padding:3px 10px;border-radius:8px;font-size:0.7rem;font-weight:800;color:white;margin-bottom:0.4rem}
+.team-name{font-size:0.95rem;font-weight:800;margin-bottom:0.2rem}
+.team-items{font-size:0.8rem;color:var(--muted);line-height:1.8}
+
+.flow{display:flex;align-items:center;justify-content:center;gap:0.3rem;padding:1.5rem;background:var(--surface);border-radius:14px;overflow-x:auto;margin-bottom:1.2rem;border:1px solid var(--border)}
+.fn{background:var(--card);border:2px solid var(--nc,var(--blue));border-radius:10px;padding:0.8rem 0.5rem;text-align:center;min-width:90px;font-size:0.75rem;font-weight:700}
+.fi{font-size:1.5rem;margin-bottom:0.2rem;display:block}
+.fa{flex-shrink:0;color:var(--muted);font-weight:900}
+@media(max-width:768px){.flow{flex-direction:column}.fa{transform:rotate(90deg)}}
+
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.8rem;margin-bottom:1.2rem}
+.cc{border-radius:12px;overflow:hidden;background:var(--card);border:1px solid var(--border)}
+.ch{padding:0.7rem;color:white;text-align:center;font-weight:800;font-size:0.85rem}
+.cb{padding:0.8rem}
+.cr{display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid var(--border);font-size:0.78rem}
+.cr:last-child{border-bottom:none}
+.cl{color:var(--muted)}.cv{font-weight:700;font-size:0.75rem}
+
+table{width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:1.2rem}
+th{background:var(--blue);color:white;padding:0.6rem 0.8rem;text-align:left;font-weight:700}
+td{padding:0.6rem 0.8rem;border-bottom:1px solid var(--border)}
+tr:hover td{background:var(--blue-l)}
+code{background:#eef2ff;padding:0.1rem 0.35rem;border-radius:4px;font-size:0.78rem;color:var(--purple)}
+
+.screen{border:2px solid var(--border);border-radius:12px;padding:0.8rem;margin-bottom:1.2rem;background:#f8fafc}
+.screen-bar{background:#e2e8f0;border-radius:8px 8px 0 0;padding:0.4rem 0.8rem;font-size:0.7rem;font-weight:700;color:var(--muted);margin:-0.8rem -0.8rem 0.8rem;display:flex;align-items:center;gap:0.4rem}
+.screen-dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1}
+.screen-content{font-size:0.82rem;line-height:1.7}
+
+@media print{.hero{background:var(--blue)!important;-webkit-print-color-adjust:exact}section{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<!-- 히어로 -->
+<div class="hero">
+<div class="container">
+  <h1>🏫 4팀 실습 가이드</h1>
+  <p>AI 검색 시스템에 외부 지식을 추가하고, 팀별 맞춤 메뉴로 검색을 체험합니다</p>
+</div>
+</div>
+
+<div class="container">
+
+<!-- ━━━━ 실습 개요 ━━━━ -->
+<section>
+  <div class="st">📋 실습 개요</div>
+  <div class="sd">이미 돌아가는 AI 검색 시스템에 "우리 업종의 최신 뉴스"를 추가하고, 추가한 자료가 실제로 검색되는지 확인합니다.</div>
+
+  <div class="flow">
+    <div class="fn" style="--nc:var(--teal)"><span class="fi">📝</span>소스 등록</div>
+    <div class="fa">→</div>
+    <div class="fn" style="--nc:var(--blue)"><span class="fi">🕷️</span>크롤러</div>
+    <div class="fa">→</div>
+    <div class="fn" style="--nc:var(--purple)"><span class="fi">📥</span>인덱싱</div>
+    <div class="fa">→</div>
+    <div class="fn" style="--nc:var(--green)"><span class="fi">🔍</span>AI 검색</div>
+    <div class="fa">→</div>
+    <div class="fn" style="--nc:var(--orange)"><span class="fi">🎯</span>결과 확인</div>
+  </div>
+
+  <div class="team-grid">
+    <div class="team-card" style="border-color:var(--teal)">
+      <span class="team-badge" style="background:var(--teal)">1팀</span>
+      <div class="team-name">🚢 조선</div>
+      <div class="team-items">추가 소스: gCaptain 해양뉴스, 스마트조선소 AI<br>검색 예시: "스마트 조선소 AI 동향"</div>
+    </div>
+    <div class="team-card" style="border-color:var(--blue)">
+      <span class="team-badge" style="background:var(--blue)">2팀</span>
+      <div class="team-name">🏭 제조</div>
+      <div class="team-items">추가 소스: SME Manufacturing, 스마트팩토리 AI<br>검색 예시: "스마트팩토리 AI 트렌드"</div>
+    </div>
+    <div class="team-card" style="border-color:var(--green)">
+      <span class="team-badge" style="background:var(--green)">3팀</span>
+      <div class="team-name">📦 물류</div>
+      <div class="team-items">추가 소스: Supply Chain Dive, 물류 로봇 AMR<br>검색 예시: "물류 로봇 AMR 트렌드"</div>
+    </div>
+    <div class="team-card" style="border-color:var(--orange)">
+      <span class="team-badge" style="background:var(--orange)">4팀</span>
+      <div class="team-name">🏢 본사</div>
+      <div class="team-items">추가 소스: McKinsey, 조선·제조 AI전환<br>검색 예시: "조선 제조 AI 전환 동향"</div>
+    </div>
+  </div>
+</section>
+
+<!-- ━━━━ Step 1 ━━━━ -->
+<section>
+  <div class="step-box" style="--sc:var(--teal)">
+    <div class="step-num" style="background:var(--teal)">1</div>
+    <div class="step-title">🌐 워크숍 UI 접속 + 기존 자료 체험</div>
+    <div class="step-desc">NUC 브라우저에서 접속하고, 기존 피지컬 AI 자료로 먼저 검색해 봅니다.</div>
+  </div>
+
+  <div class="card">
+    <h3>브라우저에서 접속</h3>
+    <pre class="code"><span class="cm"># NUC 브라우저 주소창에 입력</span>
+http://192.168.0.75:8502</pre>
+  </div>
+
+  <div class="screen">
+    <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span> 브라우저 화면</div>
+    <div class="screen-content">
+      <strong>왼쪽 사이드바에서:</strong><br>
+      ① 🏢 <strong>팀 선택</strong> 드롭다운 → 자기 팀 선택 (예: 🚢 1팀 · 조선)<br>
+      ② 📂 <strong>메뉴</strong>에 팀별 카테고리가 나타남<br><br>
+      <strong>먼저 "🦾 로봇 기술" 메뉴 클릭:</strong><br>
+      → 빠른 질문 "SO-ARM101 캘리브레이션 절차" 클릭<br>
+      → 4-Hall 진행 바가 순서대로 켜짐 (준비관 → 임베딩관 → 생성관 → 검수관)<br>
+      → 답변 + 신뢰도 + 출처 표시<br><br>
+      <strong>그 다음 "🚢 조선 트렌드" 메뉴 클릭:</strong><br>
+      → "스마트 조선소 AI 동향" 질문<br>
+      → ⚠️ <em>아직 외부 소스를 추가하지 않았으므로 결과가 부족할 수 있음</em><br>
+      → 이제 Step 2에서 소스를 추가합니다!
+    </div>
+  </div>
+
+  <div class="tip t-b">
+    <span class="ti">💡</span>
+    <div><strong>체감 포인트:</strong> "전체 검색"은 기존 사내 피지컬 AI 자료에서 잘 나오지만, "조선 트렌드"는 아직 비어있다 → "우리 업종 소스를 추가하면 여기에 나오겠구나!"</div>
+  </div>
+</section>
+
+<!-- ━━━━ Step 2 ━━━━ -->
+<section>
+  <div class="step-box" style="--sc:var(--blue)">
+    <div class="step-num" style="background:var(--blue)">2</div>
+    <div class="step-title">📝 외부 소스 등록 — 09_sources.yaml에 URL 추가</div>
+    <div class="step-desc">NUC에서 서버로 SSH 접속 후, 자기 팀의 외부 소스를 추가합니다.</div>
+  </div>
+
+  <div class="card">
+    <h3>2-1. 서버에 SSH 접속</h3>
+    <pre class="code"><span class="cm"># NUC 터미널에서</span>
+ssh zetabank@192.168.0.75
+<span class="cm"># 비밀번호 입력</span></pre>
+  </div>
+
+  <div class="card">
+    <h3>2-2. 자기 팀의 외부 소스 파일 확인</h3>
+    <pre class="code"><span class="cm"># 팀별 소스 파일 확인 (예: 1팀)</span>
+cat ~/rag_llm/workshop/team1_shipbuilding/external/외부소스_조선.yaml
+
+<span class="cm"># 이런 내용이 보입니다:</span>
+<span class="hi"># rss_feeds 섹션 맨 아래에 추가</span>
+  - name: "gCaptain Shipping News"
+    url: "https://gcaptain.com/feed/"
+    category: industry_news
+    max_results: 15
+
+<span class="hi"># google_news_topics 섹션 맨 아래에 추가</span>
+  - name: "Smart Shipyard AI"
+    query: '("smart shipyard" OR "조선 AI") when:7d'
+    max_results: 15
+    lang: ko
+    country: KR</pre>
+  </div>
+
+  <div class="card">
+    <h3>2-3. 09_sources.yaml 편집</h3>
+    <pre class="code"><span class="cm"># 편집기 열기</span>
+nano ~/rag_llm/09_sources.yaml
+
+<span class="cm"># 1) rss_feeds: 섹션의 맨 아래로 이동 (Ctrl+아래화살표)</span>
+<span class="cm"># 2) 팀 RSS 소스 붙여넣기</span>
+<span class="cm"># 3) google_news_topics: 섹션의 맨 아래로 이동</span>
+<span class="cm"># 4) 팀 뉴스 소스 붙여넣기</span>
+<span class="cm"># 5) Ctrl+O 저장 → Enter → Ctrl+X 나가기</span></pre>
+  </div>
+
+  <div class="tip t-o">
+    <span class="ti">⚠️</span>
+    <div><strong>중요: 팀 순서대로 편집!</strong> 같은 파일을 동시에 편집하면 마지막 저장이 이깁니다. <strong>1팀 편집→저장 → 2팀 편집→저장 → 3팀 → 4팀</strong> 순서로 진행하세요.</div>
+  </div>
+
+  <h3 style="font-size:1rem;font-weight:800;margin:1.5rem 0 0.8rem">팀별 추가할 내용</h3>
+
+  <div class="compare">
+    <div class="cc">
+      <div class="ch" style="background:var(--teal)">🚢 1팀 조선</div>
+      <div class="cb">
+        <div class="cr"><span class="cl">RSS</span><span class="cv">gCaptain</span></div>
+        <div class="cr"><span class="cl">RSS</span><span class="cv">Splash247</span></div>
+        <div class="cr"><span class="cl">뉴스</span><span class="cv">스마트조선소 AI</span></div>
+        <div class="cr"><span class="cl">뉴스</span><span class="cv">HD현대중공업</span></div>
+      </div>
+    </div>
+    <div class="cc">
+      <div class="ch" style="background:var(--blue)">🏭 2팀 제조</div>
+      <div class="cb">
+        <div class="cr"><span class="cl">RSS</span><span class="cv">SME Manufacturing</span></div>
+        <div class="cr"><span class="cl">RSS</span><span class="cv">Modern Machine Shop</span></div>
+        <div class="cr"><span class="cl">뉴스</span><span class="cv">스마트팩토리 제조AI</span></div>
+        <div class="cr"><span class="cl">뉴스</span><span class="cv">CNC Robot Automation</span></div>
+      </div>
+    </div>
+    <div class="cc">
+      <div class="ch" style="background:var(--green)">📦 3팀 물류</div>
+      <div class="cb">
+        <div class="cr"><span class="cl">RSS</span><span class="cv">Logistics Management</span></div>
+        <div class="cr"><span class="cl">RSS</span><span class="cv">Supply Chain Dive</span></div>
+        <div class="cr"><span class="cl">뉴스</span><span class="cv">물류 로봇 자동화</span></div>
+        <div class="cr"><span class="cl">뉴스</span><span class="cv">Warehouse Automation</span></div>
+      </div>
+    </div>
+    <div class="cc">
+      <div class="ch" style="background:var(--orange)">🏢 4팀 본사</div>
+      <div class="cb">
+        <div class="cr"><span class="cl">RSS</span><span class="cv">McKinsey Ops</span></div>
+        <div class="cr"><span class="cl">RSS</span><span class="cv">Deloitte AI</span></div>
+        <div class="cr"><span class="cl">뉴스</span><span class="cv">조선 제조 AI전환</span></div>
+        <div class="cr"><span class="cl">뉴스</span><span class="cv">Enterprise AI Strategy</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ━━━━ Step 3 ━━━━ -->
+<section>
+  <div class="step-box" style="--sc:var(--purple)">
+    <div class="step-num" style="background:var(--purple)">3</div>
+    <div class="step-title">🕷️ 크롤러 실행 — 외부 소스에서 자료 수집</div>
+    <div class="step-desc">4팀 모두 소스 등록 완료 후, 강사가 한 번 실행합니다.</div>
+  </div>
+
+  <div class="card">
+    <h3>크롤러 실행 명령어</h3>
+    <pre class="code"><span class="cm"># 서버에서 실행 (강사 또는 대표 1명)</span>
+cd ~/rag_llm
+python 08_crawler.py --config 09_sources.yaml --out ./snapshots</pre>
+  </div>
+
+  <div class="screen">
+    <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span> 터미널 출력 화면</div>
+    <div class="screen-content">
+      <code>📰 RSS[industry_news]: gCaptain Shipping News</code> ← 1팀!<br>
+      <code>  ✅ 12건 → rss__gCaptain_Shipping_News.jsonl</code><br>
+      <code>📰 RSS[industry_news]: SME Manufacturing News</code> ← 2팀!<br>
+      <code>  ✅ 8건 → rss__SME_Manufacturing_News.jsonl</code><br>
+      <code>📰 RSS[industry_news]: Supply Chain Dive</code> ← 3팀!<br>
+      <code>  ✅ 15건 → rss__Supply_Chain_Dive.jsonl</code><br>
+      <code>🌐 Google News: Smart Shipyard AI</code> ← 1팀!<br>
+      <code>  ✅ 10건 → gnews__Smart_Shipyard_AI.jsonl</code><br>
+      <code>🌐 Google News: 스마트팩토리 제조AI</code> ← 2팀!<br>
+      <code>  ✅ 13건 → gnews__스마트팩토리_제조AI.jsonl</code><br>
+      <code>...</code><br>
+      <code>═══════════════════════════════</code><br>
+      <code>✅ 완료 · 총 187건</code>
+    </div>
+  </div>
+
+  <div class="tip t-g">
+    <span class="ti">🎯</span>
+    <div><strong>여기서 감동 포인트!</strong> 각 팀이 추가한 소스 이름이 화면에 나타나면서 "우리가 추가한 게 실제로 크롤링되고 있다!"는 것을 눈으로 확인합니다.</div>
+  </div>
+</section>
+
+<!-- ━━━━ Step 4 ━━━━ -->
+<section>
+  <div class="step-box" style="--sc:var(--green)">
+    <div class="step-num" style="background:var(--green)">4</div>
+    <div class="step-title">📥 인덱싱 — 수집된 자료를 검색 가능하게</div>
+    <div class="step-desc">크롤링한 자료를 OpenSearch에 넣어 AI가 검색할 수 있게 합니다.</div>
+  </div>
+
+  <div class="card">
+    <h3>인덱싱 실행 명령어</h3>
+    <pre class="code"><span class="cm"># 오늘 날짜 폴더 확인</span>
+ls ./snapshots/
+
+<span class="cm"># 인덱싱 실행</span>
+TODAY=$(date +%Y%m%d)
+python 10_bulk_ingest.py --snapshot-dir ./snapshots/$TODAY</pre>
+  </div>
+
+  <div class="screen">
+    <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span> 터미널 출력 화면</div>
+    <div class="screen-content">
+      <code>📥 12개 파일 처리 시작</code><br>
+      <code>▶ rss__gCaptain_Shipping_News.jsonl (12건)</code><br>
+      <code>▶ gnews__Smart_Shipyard_AI.jsonl (10건)</code><br>
+      <code>▶ gnews__스마트팩토리_제조AI.jsonl (13건)</code><br>
+      <code>...</code><br>
+      <code>═══════════════════════════════</code><br>
+      <code>✅ 완료 · 성공 187, 실패 0</code><br>
+      <code>📊 external_mirror 현재 문서 수: 597</code>
+    </div>
+  </div>
+
+  <div class="tip t-b">
+    <span class="ti">💡</span>
+    <div><strong>인덱스 = 책의 찾아보기</strong><br>
+    크롤러가 모은 자료를 OpenSearch라는 "마법의 서랍장"에 정리해서 넣는 과정이에요. 넣고 나면 AI가 키워드(BM25) + 의미(kNN) 두 가지 방법으로 동시에 검색할 수 있습니다.</div>
+  </div>
+</section>
+
+<!-- ━━━━ Step 5 ━━━━ -->
+<section>
+  <div class="step-box" style="--sc:var(--orange)">
+    <div class="step-num" style="background:var(--orange)">5</div>
+    <div class="step-title">🔍 팀별 메뉴에서 검색 체험</div>
+    <div class="step-desc">브라우저로 돌아가서, 방금 추가한 자료가 실제로 검색되는지 확인합니다.</div>
+  </div>
+
+  <div class="card">
+    <h3>5-1. 팀 외부 트렌드 메뉴에서 검색</h3>
+    <div style="font-size:0.9rem;line-height:2">
+      브라우저에서 사이드바 메뉴 클릭:<br>
+      <strong>1팀:</strong> 🚢 조선 트렌드 → "스마트 조선소 AI 동향"<br>
+      <strong>2팀:</strong> 🏭 제조 트렌드 → "스마트팩토리 AI 트렌드"<br>
+      <strong>3팀:</strong> 📦 물류 트렌드 → "물류 로봇 AMR 트렌드"<br>
+      <strong>4팀:</strong> 📈 시장 동향 → "조선 제조 AI 전환 동향"
+    </div>
+  </div>
+
+  <div class="screen">
+    <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span> 1팀 검색 결과 예시</div>
+    <div class="screen-content">
+      📋 준비관 ✅ 4.6s → 🔍 임베딩관 ✅ 1.1s → ✍️ 생성관 ✅ 13.7s → 🔬 검수관 ✅ 9.2s<br><br>
+      <strong>K조선 3사도 스마트화 가속…AX·DX 조직 키운다</strong><br>
+      K조선 3사(현대중공업, 삼성중공업, 대우조선해양)는 스마트 조선소 구축을 위해
+      AX(Advanced eXpertise) 및 DX를 추진 중입니다...<br><br>
+      <em style="color:var(--green)">● 신뢰도 80% · 소요 25.59s · 생성 qwen3:32b · 검증 gemma3:12b</em><br><br>
+      📎 SOURCE 01: K조선 3사도 스마트화 가속 — <strong>원본 보기 → 실제 뉴스 기사 링크!</strong>
+    </div>
+  </div>
+
+  <div class="tip t-g">
+    <span class="ti">🎉</span>
+    <div><strong>감동의 순간!</strong> "내가 URL을 추가한 지 5분 만에, AI가 그 뉴스를 근거로 답변을 만들어낸다!" — 이것이 RAG의 핵심 가치입니다.</div>
+  </div>
+</section>
+
+<!-- ━━━━ Step 6 ━━━━ -->
+<section>
+  <div class="step-box" style="--sc:var(--purple)">
+    <div class="step-num" style="background:var(--purple)">6</div>
+    <div class="step-title">🌐 전체 통합 — 모든 팀 자료가 합쳐지는 순간</div>
+    <div class="step-desc">사이드바에서 "전체 통합"을 선택하면 4팀이 추가한 모든 자료가 통합 검색됩니다.</div>
+  </div>
+
+  <div class="card">
+    <h3>사이드바 → 🌐 전체 통합 → 외부 트렌드</h3>
+    <div style="font-size:0.9rem;line-height:1.8">
+      질문: <strong>"로봇과 AI로 산업이 어떻게 변하고 있나요?"</strong><br><br>
+      이 질문에 대해 <strong>4팀이 추가한 모든 자료</strong>에서 답변이 합성됩니다:<br>
+      • 조선 소스에서: 스마트 조선소 사례<br>
+      • 제조 소스에서: 스마트팩토리 예지보전<br>
+      • 물류 소스에서: 물류 로봇 AMR 도입<br>
+      • 본사 소스에서: 전사 AI 전환 전략
+    </div>
+  </div>
+
+  <div class="tip t-p">
+    <span class="ti">🧠</span>
+    <div><strong>패러다임 전환 — "AI 검색"이란?</strong><br>
+    기존 검색: 키워드가 일치하는 문서만 반환<br>
+    AI 검색: 의미를 이해하고, 여러 출처를 합성하여, 검증까지 거친 답변을 생성<br><br>
+    각 팀이 다른 업종의 소스를 추가했지만, 전체 통합에서는 <strong>한 질문에 대해 조선+제조+물류+전략이 모두 반영된 답변</strong>이 나옵니다. 이것이 이중 RAG의 힘입니다.</div>
+  </div>
+</section>
+
+<!-- ━━━━ 트러블슈팅 ━━━━ -->
+<section>
+  <div class="st">🔧 자주 발생하는 문제</div>
+
+  <table>
+    <tr><th>증상</th><th>원인</th><th>해결</th></tr>
+    <tr><td>크롤러 에러: <code>KeyError: 'query'</code></td><td>RSS 항목이 google_news 섹션에 잘못 들어감</td><td>RSS는 <code>rss_feeds:</code>에, 뉴스는 <code>google_news_topics:</code>에</td></tr>
+    <tr><td>크롤러 에러: <code>RSS 파싱 실패</code></td><td>해당 사이트 XML 오류</td><td>다른 RSS URL로 교체</td></tr>
+    <tr><td>외부 트렌드 메뉴에서 결과 없음</td><td>인덱싱을 안 했거나 인덱스가 다름</td><td><code>10_bulk_ingest.py</code> 실행 확인</td></tr>
+    <tr><td>답변이 중간에 잘림</td><td>토큰 제한 (2048) 부족</td><td><code>max_tok=4096</code>으로 변경</td></tr>
+    <tr><td>4팀 동시 질의 시 느림</td><td>Ollama 순차 처리</td><td>팀별 시간차 두기 또는 라운드제</td></tr>
+    <tr><td>원본 보기가 파일 목록 표시</td><td><code>url</code> 필드를 못 가져옴</td><td><code>search_engine.py</code>의 <code>_source</code>에 <code>url</code> 추가</td></tr>
+  </table>
+</section>
+
+<!-- ━━━━ 핵심 정리 ━━━━ -->
+<section>
+  <div class="st">✅ 오늘 배운 것</div>
+
+  <div class="card" style="background:linear-gradient(135deg,#ede9fe,#dbeafe);border:none">
+    <div style="font-size:0.92rem;line-height:2.2">
+      <strong>1.</strong> <code>09_sources.yaml</code>에 URL을 추가하면 → 크롤러가 자동으로 수집한다<br>
+      <strong>2.</strong> 수집된 자료는 <code>10_bulk_ingest.py</code>로 → OpenSearch에 인덱싱된다<br>
+      <strong>3.</strong> 인덱싱된 자료는 즉시 → 4-Hall RAG 파이프라인에서 검색 가능하다<br>
+      <strong>4.</strong> 팀별 메뉴에서 업종별 트렌드를 → 각자 다른 관점으로 검색할 수 있다<br>
+      <strong>5.</strong> 전체 통합에서는 → 모든 팀의 지식이 합쳐진 답변이 나온다<br>
+      <strong>6.</strong> AI가 답변을 만들면 → 다른 AI가 교차 검증해서 환각을 잡는다<br>
+      <strong>7.</strong> 이것이 → <strong>폐쇄망에서도 동작하는 온프레미스 AI 검색 시스템</strong>이다
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div style="text-align:center;padding:2.5rem;color:var(--muted);font-size:0.8rem">
+  제타위성로보틱스 · Physical AI Education Platform · 2026
+</div>
+
+</body>
+</html>
