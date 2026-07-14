@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤖 AI의 공부법 — 크롤러, 미러링, 검색, 그리고 4개의 뇌</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue: #2563EB; --blue-light: #DBEAFE;
+  --purple: #7C3AED; --purple-light: #EDE9FE;
+  --green: #059669; --green-light: #D1FAE5;
+  --orange: #D97706; --orange-light: #FEF3C7;
+  --red: #DC2626; --red-light: #FEE2E2;
+  --teal: #0891B2; --teal-light: #CFFAFE;
+  --surface: #F8FAFC; --card: #FFFFFF; --text: #1E293B; --muted: #64748B; --border: #E2E8F0;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--surface);color:var(--text);line-height:1.8;font-size:16px}
+code,pre{font-family:'JetBrains Mono',monospace}
+.container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+section{padding:3rem 0}
+
+/* ── 히어로 ── */
+.hero{background:linear-gradient(135deg,#0891B2,#22D3EE);color:white;padding:4rem 0;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-60%;right:-15%;width:500px;height:500px;background:radial-gradient(circle,rgba(255,255,255,0.1) 0%,transparent 70%);border-radius:50%}
+.hero::after{content:'';position:absolute;bottom:-40%;left:-10%;width:400px;height:400px;background:radial-gradient(circle,rgba(255,255,255,0.06) 0%,transparent 70%);border-radius:50%}
+.hero h1{font-size:2.5rem;font-weight:900;line-height:1.2;margin-bottom:0.75rem;position:relative}
+.hero p{font-size:1.1rem;opacity:0.9;max-width:650px;margin:0 auto 1.5rem;position:relative}
+.hero-tags{display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;position:relative}
+.hero-tag{padding:0.35rem 1rem;border-radius:20px;font-size:0.8rem;font-weight:700;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.25)}
+
+/* ── 섹션 제목 ── */
+.stitle{font-size:1.75rem;font-weight:900;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem}
+.stitle .emoji{font-size:2rem}
+.sdesc{font-size:1rem;color:var(--muted);margin-bottom:2rem;max-width:700px}
+
+/* ── 비유 박스 ── */
+.analogy{border-radius:16px;padding:1.5rem 2rem;margin-bottom:1.5rem;display:flex;gap:1rem;align-items:flex-start}
+.analogy .a-icon{font-size:2.5rem;flex-shrink:0}
+.analogy .a-title{font-weight:900;font-size:1.1rem;margin-bottom:0.3rem}
+.analogy .a-text{font-size:0.95rem;line-height:1.7}
+.analogy .a-real{font-size:0.85rem;color:var(--muted);margin-top:0.5rem;padding-top:0.5rem;border-top:1px dashed var(--border)}
+.ab{background:var(--blue-light);border-left:4px solid var(--blue)}
+.ap{background:var(--purple-light);border-left:4px solid var(--purple)}
+.ag{background:var(--green-light);border-left:4px solid var(--green)}
+.ao{background:var(--orange-light);border-left:4px solid var(--orange)}
+.at{background:var(--teal-light);border-left:4px solid var(--teal)}
+.ar{background:var(--red-light);border-left:4px solid var(--red)}
+
+/* ── 플로우 ── */
+.flow{display:flex;align-items:center;justify-content:center;gap:0.4rem;padding:2rem 1rem;background:var(--surface);border-radius:16px;overflow-x:auto;margin-bottom:1.5rem;border:1px solid var(--border)}
+.flow-node{background:var(--card);border:2.5px solid var(--nc,var(--blue));border-radius:14px;padding:1.2rem 0.8rem;text-align:center;min-width:110px;transition:transform 0.2s}
+.flow-node:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,0.1)}
+.flow-icon{font-size:2rem;margin-bottom:0.4rem}
+.flow-title{font-weight:800;font-size:0.8rem}
+.flow-desc{font-size:0.7rem;color:var(--muted);margin-top:0.15rem}
+.flow-arrow{flex-shrink:0;color:var(--muted);font-size:1.2rem;font-weight:900}
+@media(max-width:768px){.flow{flex-direction:column}.flow-arrow{transform:rotate(90deg)}}
+
+/* ── 카드 ── */
+.card{background:var(--card);border-radius:16px;padding:1.5rem 2rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.07);margin-bottom:1.5rem;border:1px solid var(--border)}
+
+/* ── 비교 그리드 ── */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
+.ccard{border-radius:14px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.06);background:var(--card);border:1px solid var(--border);transition:transform 0.2s}
+.ccard:hover{transform:translateY(-3px)}
+.chead{padding:1rem;color:white;text-align:center;font-weight:800;font-size:0.95rem}
+.chead .ci{font-size:1.8rem;display:block;margin-bottom:0.25rem}
+.cbody{padding:1rem}
+.crow{display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--border);font-size:0.8rem}
+.crow:last-child{border-bottom:none}
+.cl{color:var(--muted)}.cv{font-weight:700;font-size:0.78rem}
+
+/* ── 수치 카드 ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat{text-align:center;padding:1.5rem 1rem;border-radius:14px;background:var(--card);border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.stat-n{font-size:2.2rem;font-weight:900;font-family:'JetBrains Mono',monospace}
+.stat-l{font-size:0.8rem;color:var(--muted);margin-top:0.3rem;font-weight:600}
+
+/* ── 계층 구조 ── */
+.arch{display:flex;flex-direction:column;align-items:center;gap:0;padding:2rem;background:var(--surface);border-radius:16px;margin-bottom:1.5rem;border:1px solid var(--border)}
+.arch-layer{width:100%;max-width:700px;border:2.5px solid var(--lc,var(--blue));border-radius:14px;padding:1.2rem 1.5rem;background:color-mix(in srgb,var(--lc,var(--blue)) 6%,white)}
+.arch-label{font-weight:800;color:var(--lc,var(--blue));font-size:0.8rem;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.5rem}
+.arch-boxes{display:flex;gap:0.6rem;flex-wrap:wrap}
+.arch-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.8rem;font-size:0.85rem;font-weight:600}
+.arch-conn{color:var(--muted);font-size:1.5rem;padding:0.15rem 0;font-weight:900}
+
+/* ── 타임라인 ── */
+.timeline{position:relative;padding-left:2.5rem;margin-bottom:1.5rem}
+.timeline::before{content:'';position:absolute;left:0.7rem;top:0;bottom:0;width:3px;background:var(--teal-light);border-radius:3px}
+.tstep{position:relative;margin-bottom:2rem}
+.tstep::before{content:attr(data-n);position:absolute;left:-2.5rem;top:0;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--teal);color:white;font-size:0.7rem;font-weight:900;display:flex;align-items:center;justify-content:center;z-index:1}
+.tstep h4{font-size:1rem;font-weight:800;margin-bottom:0.25rem}
+.tstep p{font-size:0.9rem;color:var(--muted)}
+
+/* ── 코드 ── */
+pre.code{background:#1e293b;color:#e2e8f0;padding:1.2rem 1.5rem;border-radius:12px;overflow-x:auto;font-size:0.82rem;line-height:1.6;margin-bottom:1.5rem}
+pre.code .cm{color:#94a3b8}
+pre.code .kw{color:#c084fc}
+pre.code .st{color:#86efac}
+
+/* ── 팁 ── */
+.tip{padding:1rem 1.5rem;border-radius:12px;margin-bottom:1.5rem;font-size:0.9rem;display:flex;gap:0.75rem;align-items:flex-start}
+.tip-b{background:var(--blue-light);border-left:4px solid var(--blue)}
+.tip-o{background:var(--orange-light);border-left:4px solid var(--orange)}
+.tip-g{background:var(--green-light);border-left:4px solid var(--green)}
+.tip-t{background:var(--teal-light);border-left:4px solid var(--teal)}
+.tip .ti{font-size:1.3rem;flex-shrink:0}
+
+/* ── 큰 번호 + 제목 ── */
+.big-step{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem}
+.big-num{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:white;flex-shrink:0}
+.big-info h3{font-size:1.2rem;font-weight:900}
+.big-info p{font-size:0.85rem;color:var(--muted)}
+
+/* ── 인쇄 ── */
+@media print{.hero{background:var(--teal)!important;-webkit-print-color-adjust:exact}section{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<!-- ━━━━ 히어로 ━━━━ -->
+<div class="hero">
+<div class="container">
+  <h1>🤖 AI는 어떻게 공부할까?</h1>
+  <p>크롤러가 자료를 모으고, 미러링이 정리하고, OpenSearch가 기억하고, 4개의 뇌가 답변하는 전체 흐름을 쉽게 알아봐요</p>
+  <div class="hero-tags">
+    <span class="hero-tag">크롤러 (Crawler)</span>
+    <span class="hero-tag">미러링 (Mirroring)</span>
+    <span class="hero-tag">OpenSearch</span>
+    <span class="hero-tag">4-Hall GPU</span>
+    <span class="hero-tag">교차 검증</span>
+  </div>
+</div>
+</div>
+
+<div class="container">
+
+<!-- ━━━━ 전체 흐름 한눈에 ━━━━ -->
+<section>
+  <div class="stitle"><span class="emoji">🗺️</span> 전체 흐름을 한눈에 보기</div>
+  <div class="sdesc">AI가 똑똑한 답변을 하려면, 먼저 공부를 해야 해요. 그 과정을 4단계로 나눌 수 있어요.</div>
+
+  <div class="flow">
+    <div class="flow-node" style="--nc:var(--teal)"><div class="flow-icon">🕷️</div><div class="flow-title">크롤러</div><div class="flow-desc">자료 수집</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--nc:var(--blue)"><div class="flow-icon">🪞</div><div class="flow-title">미러링</div><div class="flow-desc">정리 · 변환</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--nc:var(--purple)"><div class="flow-icon">📚</div><div class="flow-title">OpenSearch</div><div class="flow-desc">기억 · 검색</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--nc:var(--green)"><div class="flow-icon">🧠</div><div class="flow-title">4-Hall</div><div class="flow-desc">생각 · 답변</div></div>
+  </div>
+
+  <div class="analogy at">
+    <div class="a-icon">📖</div>
+    <div>
+      <div class="a-title">비유: 시험공부하는 학생</div>
+      <div class="a-text">여러분이 시험공부를 한다고 생각해보세요.
+        <strong>①</strong> 먼저 인터넷에서 좋은 자료를 찾아요 (크롤러).
+        <strong>②</strong> 찾은 자료를 예쁘게 노트에 정리해요 (미러링).
+        <strong>③</strong> 정리한 노트를 서랍에 넣고 나중에 빠르게 찾을 수 있게 해요 (OpenSearch).
+        <strong>④</strong> 시험 문제가 나오면 서랍에서 노트를 꺼내 답을 써요 (4-Hall).
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ━━━━ 1. 크롤러 ━━━━ -->
+<section>
+  <div class="big-step">
+    <div class="big-num" style="background:var(--teal)">1</div>
+    <div class="big-info"><h3>🕷️ 크롤러 (Crawler) — 자료를 모아오는 로봇</h3><p>인터넷의 좋은 자료를 자동으로 찾아서 가져와요</p></div>
+  </div>
+
+  <div class="analogy at">
+    <div class="a-icon">🐝</div>
+    <div>
+      <div class="a-title">비유: 꿀벌의 꿀 수집</div>
+      <div class="a-text">꿀벌이 여러 꽃을 돌아다니며 꿀을 모아오듯, 크롤러는 여러 웹사이트를 돌아다니며 <strong>새로운 글, 뉴스, 기술 문서</strong>를 모아와요. 매일 새벽 3시에 자동으로 출발합니다!</div>
+      <div class="a-real">💡 <strong>실제로는</strong> — <code>08_crawler.py</code>가 RSS 피드(웹사이트의 새 글 알림)를 읽어서 새로운 글이 있으면 다운로드합니다.</div>
+    </div>
+  </div>
+
+  <h4 style="font-size:1.1rem;font-weight:800;margin-bottom:1rem">크롤러가 방문하는 곳들</h4>
+  <div class="compare">
+    <div class="ccard">
+      <div class="chead" style="background:var(--teal)"><span class="ci">🏢</span>AI 회사 블로그</div>
+      <div class="cbody">
+        <div class="crow"><span class="cl">NVIDIA</span><span class="cv">GPU · CUDA</span></div>
+        <div class="crow"><span class="cl">HuggingFace</span><span class="cv">모델 · 데이터셋</span></div>
+        <div class="crow"><span class="cl">Google Research</span><span class="cv">Gemma · Gemini</span></div>
+        <div class="crow"><span class="cl">Meta AI</span><span class="cv">LLaMA · 연구</span></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="chead" style="background:var(--blue)"><span class="ci">🤖</span>로봇 뉴스</div>
+      <div class="cbody">
+        <div class="crow"><span class="cl">The Robot Report</span><span class="cv">로봇 산업 뉴스</span></div>
+        <div class="crow"><span class="cl">IEEE Spectrum</span><span class="cv">공학 저널</span></div>
+        <div class="crow"><span class="cl">Robohub</span><span class="cv">로봇 연구</span></div>
+        <div class="crow"><span class="cl">MIT Tech Review</span><span class="cv">기술 트렌드</span></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="chead" style="background:var(--purple)"><span class="ci">🛠️</span>로봇 회사</div>
+      <div class="cbody">
+        <div class="crow"><span class="cl">Boston Dynamics</span><span class="cv">Atlas · Spot</span></div>
+        <div class="crow"><span class="cl">Figure AI</span><span class="cv">휴머노이드</span></div>
+        <div class="crow"><span class="cl">Universal Robots</span><span class="cv">협동 로봇</span></div>
+        <div class="crow"><span class="cl">Unitree</span><span class="cv">Go2 · 사족보행</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip tip-t">
+    <span class="ti">⏰</span>
+    <div><strong>매일 새벽 3시에 자동 실행!</strong> — cron이라는 리눅스 알람 시계가 매일 새벽 3시에 크롤러를 깨워서 실행시켜요. 아무도 안 쓰는 시간에 조용히 자료를 모아오는 거예요.</div>
+  </div>
+
+  <div class="tip tip-o">
+    <span class="ti">⚠️</span>
+    <div><strong>오늘 발생한 에러:</strong> cron이 <code>시스템 Python</code>을 사용하는데, <code>feedparser</code> 라이브러리가 <code>rag_venv</code> 가상환경에만 설치되어 있어서 오류가 났어요. 해결법은 cron에서 가상환경 Python 경로를 직접 지정하는 거예요.</div>
+  </div>
+</section>
+
+<!-- ━━━━ 2. 미러링 ━━━━ -->
+<section>
+  <div class="big-step">
+    <div class="big-num" style="background:var(--blue)">2</div>
+    <div class="big-info"><h3>🪞 미러링 (Mirroring) — 자료를 정리하는 비서</h3><p>수집한 자료를 AI가 이해할 수 있는 형태로 변환해요</p></div>
+  </div>
+
+  <div class="analogy ab">
+    <div class="a-icon">📋</div>
+    <div>
+      <div class="a-title">비유: 도서관 사서의 책 분류</div>
+      <div class="a-text">새 책이 도서관에 도착하면 사서가 <strong>제목 붙이기, 분류번호 매기기, 요약 쓰기, 선반에 꽂기</strong>를 해요. 미러링도 마찬가지! 크롤러가 가져온 날것의 자료를 깔끔하게 정리해서 OpenSearch 서랍에 넣을 준비를 합니다.</div>
+      <div class="a-real">💡 <strong>실제로는</strong> — 12개 파일로 구성된 외부 지식 미러링 아키텍처가 동작합니다. HTML 파싱, 텍스트 청킹, 메타데이터 추출, 벡터 변환을 수행해요.</div>
+    </div>
+  </div>
+
+  <h4 style="font-size:1.1rem;font-weight:800;margin-bottom:1rem">미러링이 하는 일 — 3단계</h4>
+
+  <div class="timeline">
+    <div class="tstep" data-n="1">
+      <h4>✂️ 청킹 (Chunking) — 자료를 적당한 크기로 잘라요</h4>
+      <p>긴 문서를 한 번에 읽으면 AI가 헷갈려요. 단락이나 제목 단위로 <strong>적당한 조각</strong>으로 나눕니다. 한 조각이 한 개의 "검색 카드"가 돼요.</p>
+    </div>
+    <div class="tstep" data-n="2">
+      <h4>🏷️ 태깅 (Tagging) — 라벨을 붙여요</h4>
+      <p>각 조각에 "이건 LeKiwi 관련", "이건 캘리브레이션 관련" 같은 <strong>태그</strong>를 붙여요. 나중에 카테고리별로 찾기 쉽게요!</p>
+    </div>
+    <div class="tstep" data-n="3">
+      <h4>🔢 벡터화 (Vectorization) — 숫자로 바꿔요</h4>
+      <p>AI는 글자를 못 읽어요. 대신 <strong>1024개의 숫자 배열</strong>로 바꾸면 "이 문장과 저 문장이 비슷한지" 계산할 수 있어요. 이걸 임베딩관(BGE-M3)이 해요!</p>
+    </div>
+  </div>
+
+  <div class="analogy ag">
+    <div class="a-icon">🎵</div>
+    <div>
+      <div class="a-title">벡터화를 더 쉽게!</div>
+      <div class="a-text">음악 앱에서 "신나는 노래 틀어줘"라고 하면, 앱이 노래 제목을 검색하는 게 아니라 <strong>노래의 분위기(빠른 템포, 밝은 음색)를 숫자로 비교</strong>해서 비슷한 노래를 찾아줘요. 벡터화도 마찬가지! 글자 대신 "의미의 숫자"로 비교하는 거예요.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ━━━━ 3. OpenSearch ━━━━ -->
+<section>
+  <div class="big-step">
+    <div class="big-num" style="background:var(--purple)">3</div>
+    <div class="big-info"><h3>📚 OpenSearch — AI의 기억 서랍장</h3><p>정리된 자료를 보관하고, 질문이 오면 빠르게 찾아줘요</p></div>
+  </div>
+
+  <div class="analogy ap">
+    <div class="a-icon">🗄️</div>
+    <div>
+      <div class="a-title">비유: 마법의 서랍장</div>
+      <div class="a-text">보통 서랍장은 라벨로만 찾죠 ("수학 노트"를 찾으려면 "수학" 서랍을 열어야 해요). 하지만 OpenSearch는 <strong>두 가지 방법</strong>을 동시에 써요: <strong>①</strong> 라벨로 찾기 (BM25) + <strong>②</strong> "이것과 비슷한 내용 찾기" (kNN). 두 방법을 합쳐서 가장 좋은 결과를 골라요!</div>
+      <div class="a-real">💡 <strong>실제로는</strong> — BM25는 Nori 한국어 형태소 분석기로 키워드를 매칭하고, kNN은 BGE-M3 벡터의 코사인 유사도를 계산합니다.</div>
+    </div>
+  </div>
+
+  <h4 style="font-size:1.1rem;font-weight:800;margin-bottom:1rem">두 가지 검색 방법 비교</h4>
+  <div class="compare">
+    <div class="ccard">
+      <div class="chead" style="background:var(--blue)"><span class="ci">🔤</span>BM25 (키워드 검색)</div>
+      <div class="cbody">
+        <div class="crow"><span class="cl">방식</span><span class="cv">단어가 일치하는지 확인</span></div>
+        <div class="crow"><span class="cl">장점</span><span class="cv">"STS3215" 같은 정확한 코드명</span></div>
+        <div class="crow"><span class="cl">약점</span><span class="cv">"로봇 팔" ≠ "매니퓰레이터"</span></div>
+        <div class="crow"><span class="cl">비유</span><span class="cv">도서관에서 제목으로 찾기</span></div>
+        <div class="crow"><span class="cl">비중</span><span class="cv" style="color:var(--blue)">40%</span></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="chead" style="background:var(--purple)"><span class="ci">🧠</span>kNN (의미 검색)</div>
+      <div class="cbody">
+        <div class="crow"><span class="cl">방식</span><span class="cv">뜻이 비슷한지 계산</span></div>
+        <div class="crow"><span class="cl">장점</span><span class="cv">"로봇 팔" ≈ "매니퓰레이터"</span></div>
+        <div class="crow"><span class="cl">약점</span><span class="cv">정확한 코드명은 놓칠 수 있음</span></div>
+        <div class="crow"><span class="cl">비유</span><span class="cv">사서에게 "이런 느낌 책" 요청</span></div>
+        <div class="crow"><span class="cl">비중</span><span class="cv" style="color:var(--purple)">60%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="analogy ab">
+    <div class="a-icon">⚖️</div>
+    <div>
+      <div class="a-title">비유: 국어 + 수학 시험 합산</div>
+      <div class="a-text">국어 100점, 수학 500점 만점이면 그냥 더하면 수학이 압도해요. <strong>둘 다 0~1점으로 환산한 뒤 합쳐야 공정</strong>해요. 이걸 해주는 게 <code>hybrid_pipeline</code>이에요! BM25 점수와 kNN 점수를 0~1로 바꾼 뒤, BM25×0.4 + kNN×0.6 으로 합산합니다.</div>
+    </div>
+  </div>
+
+  <div class="tip tip-t">
+    <span class="ti">🔍</span>
+    <div><strong>HyDE 기법도 함께!</strong> — "캘리브레이션"이라는 짧은 질문으로는 좋은 자료를 못 찾을 수 있어요. 그래서 준비관이 먼저 <strong>"이런 답변이 있을 것 같아"</strong>라는 가상 문서를 만들고, 원본 질문 + 가상 문서 <strong>두 가지로 검색</strong>합니다. 그러면 더 다양한 자료가 나와요!</div>
+  </div>
+</section>
+
+<!-- ━━━━ 4. 4-Hall 모델 ━━━━ -->
+<section>
+  <div class="big-step">
+    <div class="big-num" style="background:var(--green)">4</div>
+    <div class="big-info"><h3>🧠 4-Hall — AI의 4개의 뇌</h3><p>각각 다른 역할을 맡은 4개의 GPU 서버가 협력해요</p></div>
+  </div>
+
+  <div class="analogy ag">
+    <div class="a-icon">🏥</div>
+    <div>
+      <div class="a-title">비유: 병원의 전문의 4명</div>
+      <div class="a-text">
+        아플 때 한 명의 의사가 모든 걸 다 하면 힘들죠? 병원에는 역할이 나뉘어 있어요:<br>
+        <strong>접수처(준비관)</strong>가 증상을 정리하고 →
+        <strong>검사실(임베딩관)</strong>이 검사를 하고 →
+        <strong>주치의(생성관)</strong>가 진단서를 쓰고 →
+        <strong>감독의(검수관)</strong>가 진단이 맞는지 확인해요.
+      </div>
+    </div>
+  </div>
+
+  <!-- 4-Hall 아키텍처 다이어그램 -->
+  <div class="arch">
+    <div class="arch-layer" style="--lc:var(--purple)">
+      <div class="arch-label">📋 1단계 — 준비관 (RTX 4090 · Qwen3:14B)</div>
+      <div class="arch-boxes">
+        <div class="arch-box">질문 분석</div>
+        <div class="arch-box">HyDE 가상 문서 생성</div>
+        <div class="arch-box">검색 키워드 확장</div>
+      </div>
+    </div>
+    <div class="arch-conn">▼</div>
+    <div class="arch-layer" style="--lc:var(--blue)">
+      <div class="arch-label">🔍 2단계 — 임베딩관 (RTX 3070 · BGE-M3)</div>
+      <div class="arch-boxes">
+        <div class="arch-box">텍스트→벡터 변환</div>
+        <div class="arch-box">BM25+kNN 하이브리드 검색</div>
+        <div class="arch-box">상위 5개 자료 선택</div>
+      </div>
+    </div>
+    <div class="arch-conn">▼</div>
+    <div class="arch-layer" style="--lc:var(--green)">
+      <div class="arch-label">✍️ 3단계 — 생성관 (RTX 5090 · Qwen3:32B)</div>
+      <div class="arch-boxes">
+        <div class="arch-box">검색 자료 읽기</div>
+        <div class="arch-box">자료 기반 답변 작성</div>
+        <div class="arch-box">출처 번호 표기</div>
+      </div>
+    </div>
+    <div class="arch-conn">▼</div>
+    <div class="arch-layer" style="--lc:var(--orange)">
+      <div class="arch-label">🔬 4단계 — 검수관 (RTX 4070 · Gemma3:12B)</div>
+      <div class="arch-boxes">
+        <div class="arch-box">답변 vs 자료 대조</div>
+        <div class="arch-box">환각 감지</div>
+        <div class="arch-box">신뢰도 점수 (0~100)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="analogy ar">
+    <div class="a-icon">🚨</div>
+    <div>
+      <div class="a-title">왜 생성관과 검수관은 다른 모델을 쓸까?</div>
+      <div class="a-text">시험에서 <strong>내가 쓴 답을 내가 채점</strong>하면 어떨까요? "아, 이거 맞는 것 같은데?" 하고 넘어가기 쉬워요. 그래서 <strong>Qwen이 답을 쓰면 Gemma가 채점</strong>합니다. 서로 다른 가문(패밀리)의 AI라서 편향 없이 냉정하게 판단할 수 있어요. 이걸 <strong>교차 패밀리 검증</strong>이라고 해요!</div>
+    </div>
+  </div>
+
+  <h4 style="font-size:1.1rem;font-weight:800;margin-bottom:1rem">4개 Hall 비교</h4>
+  <div class="compare">
+    <div class="ccard">
+      <div class="chead" style="background:var(--purple)"><span class="ci">📋</span>준비관</div>
+      <div class="cbody">
+        <div class="crow"><span class="cl">GPU</span><span class="cv">RTX 4090 · 24GB</span></div>
+        <div class="crow"><span class="cl">모델</span><span class="cv">Qwen3:14B</span></div>
+        <div class="crow"><span class="cl">패밀리</span><span class="cv" style="color:var(--purple)">Qwen (알리바바)</span></div>
+        <div class="crow"><span class="cl">역할</span><span class="cv">HyDE 가상 문서</span></div>
+        <div class="crow"><span class="cl">비유</span><span class="cv">접수처 간호사</span></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="chead" style="background:var(--blue)"><span class="ci">🔍</span>임베딩관</div>
+      <div class="cbody">
+        <div class="crow"><span class="cl">GPU</span><span class="cv">RTX 3070 · 8GB</span></div>
+        <div class="crow"><span class="cl">모델</span><span class="cv">BGE-M3</span></div>
+        <div class="crow"><span class="cl">패밀리</span><span class="cv" style="color:var(--blue)">BAAI (중국 학술)</span></div>
+        <div class="crow"><span class="cl">역할</span><span class="cv">벡터 변환 + 검색</span></div>
+        <div class="crow"><span class="cl">비유</span><span class="cv">검사실 기사</span></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="chead" style="background:var(--green)"><span class="ci">✍️</span>생성관</div>
+      <div class="cbody">
+        <div class="crow"><span class="cl">GPU</span><span class="cv">RTX 5090 · 32GB</span></div>
+        <div class="crow"><span class="cl">모델</span><span class="cv">Qwen3:32B</span></div>
+        <div class="crow"><span class="cl">패밀리</span><span class="cv" style="color:var(--purple)">Qwen (알리바바)</span></div>
+        <div class="crow"><span class="cl">역할</span><span class="cv">자료 기반 답변</span></div>
+        <div class="crow"><span class="cl">비유</span><span class="cv">주치의</span></div>
+      </div>
+    </div>
+    <div class="ccard">
+      <div class="chead" style="background:var(--orange)"><span class="ci">🔬</span>검수관</div>
+      <div class="cbody">
+        <div class="crow"><span class="cl">GPU</span><span class="cv">RTX 4070 · 12GB</span></div>
+        <div class="crow"><span class="cl">모델</span><span class="cv">Gemma3:12B</span></div>
+        <div class="crow"><span class="cl">패밀리</span><span class="cv" style="color:var(--orange)">Gemma (구글)</span></div>
+        <div class="crow"><span class="cl">역할</span><span class="cv">교차 검증 · 환각 감지</span></div>
+        <div class="crow"><span class="cl">비유</span><span class="cv">감독의</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ━━━━ 5. 전체 연결 ━━━━ -->
+<section>
+  <div class="stitle"><span class="emoji">🔗</span> 전체가 어떻게 연결되나요?</div>
+  <div class="sdesc">크롤러 → 미러링 → OpenSearch → 4-Hall까지, 하나의 질문이 답변이 되기까지의 여정이에요.</div>
+
+  <div class="flow">
+    <div class="flow-node" style="--nc:var(--teal)"><div class="flow-icon">🌐</div><div class="flow-title">인터넷</div><div class="flow-desc">웹사이트 · RSS</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--nc:var(--teal)"><div class="flow-icon">🕷️</div><div class="flow-title">크롤러</div><div class="flow-desc">새벽 3시 자동</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--nc:var(--blue)"><div class="flow-icon">🪞</div><div class="flow-title">미러링</div><div class="flow-desc">청킹 · 태깅</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--nc:var(--purple)"><div class="flow-icon">📚</div><div class="flow-title">OpenSearch</div><div class="flow-desc">인덱싱</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="--nc:var(--green)"><div class="flow-icon">🤖</div><div class="flow-title">챗봇 UI</div><div class="flow-desc">질문 → 답변</div></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:1rem">📌 한 문장으로 정리하면</h3>
+    <div style="font-size:1.1rem;font-weight:700;color:var(--purple);line-height:1.8;padding:0.5rem 0">
+      "크롤러가 매일 새벽 인터넷에서 새 자료를 모아오면,<br>
+      미러링이 정리해서 OpenSearch 서랍에 넣고,<br>
+      누군가 질문하면 4개의 뇌가 서랍에서 자료를 꺼내<br>
+      답변을 만들고, 다른 뇌가 검증해서 돌려줍니다."
+    </div>
+  </div>
+</section>
+
+<!-- ━━━━ 6. 핵심 정리 ━━━━ -->
+<section>
+  <div class="stitle"><span class="emoji">✅</span> 핵심 정리</div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n" style="color:var(--teal)">🕷️</div><div class="stat-l"><strong>크롤러</strong><br>자료를 모아오는 로봇</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--blue)">🪞</div><div class="stat-l"><strong>미러링</strong><br>자료를 정리하는 비서</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--purple)">📚</div><div class="stat-l"><strong>OpenSearch</strong><br>기억하고 찾아주는 서랍</div></div>
+    <div class="stat"><div class="stat-n" style="color:var(--green)">🧠</div><div class="stat-l"><strong>4-Hall</strong><br>생각하고 답하는 4개의 뇌</div></div>
+  </div>
+
+  <div class="card" style="background:linear-gradient(135deg,#ede9fe,#dbeafe);border:none">
+    <h3 style="margin-bottom:0.75rem">🎓 오늘 배운 핵심 5가지</h3>
+    <div style="font-size:0.95rem;line-height:2">
+      <strong>1.</strong> 크롤러는 매일 새벽 인터넷에서 새 자료를 자동으로 모아와요<br>
+      <strong>2.</strong> 미러링은 날것의 자료를 <strong>청킹(자르기) → 태깅(분류) → 벡터화(숫자 변환)</strong>해요<br>
+      <strong>3.</strong> OpenSearch는 <strong>키워드(BM25) + 의미(kNN)</strong> 두 가지로 동시에 검색해요<br>
+      <strong>4.</strong> 4개 GPU 서버가 각각 <strong>준비 → 검색 → 생성 → 검증</strong> 역할을 나눠요<br>
+      <strong>5.</strong> <strong>Qwen이 답을 쓰고 Gemma가 채점</strong>하는 교차 패밀리 검증으로 환각을 잡아요
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div style="text-align:center;padding:3rem;color:var(--muted);font-size:0.85rem">
+  제타위성로보틱스 · Physical AI Education Platform · 2026
+</div>
+
+</body>
+</html>
