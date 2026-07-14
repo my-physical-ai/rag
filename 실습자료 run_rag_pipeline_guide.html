@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>실습 가이드 run rag pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --color-primary:#2563EB; --color-primary-light:#DBEAFE;
+    --color-secondary:#7C3AED; --color-secondary-light:#EDE9FE;
+    --color-success:#059669; --color-success-light:#D1FAE5;
+    --color-warning:#D97706; --color-warning-light:#FEF3C7;
+    --color-danger:#DC2626; --color-danger-light:#FEE2E2;
+    --color-surface:#F8FAFC; --color-card:#FFFFFF;
+    --color-text:#1E293B; --color-muted:#64748B; --color-border:#E2E8F0;
+    --color-code:#0F172A;
+  }
+  body{font-family:'Noto Sans KR',sans-serif;color:var(--color-text);background:var(--color-surface);line-height:1.75}
+  code,pre,.mono{font-family:'JetBrains Mono',monospace}
+  .container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+
+  /* 히어로 — AI/모델 gradient */
+  .hero{background:linear-gradient(135deg,#4C1D95 0%,#7C3AED 50%,#A78BFA 100%);color:#fff;padding:3rem 1.5rem;text-align:center}
+  .hero .badge{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:.75rem;font-weight:700;padding:.3rem .9rem;border-radius:999px;margin-bottom:1rem}
+  .hero h1{font-size:clamp(1.7rem,4.5vw,2.5rem);font-weight:900;line-height:1.25;margin-bottom:.7rem}
+  .hero .subtitle{font-size:1rem;opacity:.92;margin-bottom:1.2rem}
+  .pills{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap}
+  .pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);padding:.35rem .9rem;border-radius:999px;font-size:.8rem}
+
+  section{padding:2.5rem 0}
+  h2{font-size:clamp(1.4rem,3.5vw,1.8rem);font-weight:900;margin-bottom:.6rem}
+  h2 .accent{color:var(--color-secondary)}
+  .lead{color:var(--color-muted);font-size:.98rem;margin-bottom:1.5rem}
+
+  /* 한눈에 보기 플로우 */
+  .flow-overview{background:var(--color-card);border:1px solid var(--color-border);border-radius:14px;padding:1.5rem;margin:1.5rem 0}
+  .flow-svg-wrap svg{width:100%;height:auto;display:block}
+
+  /* 명령어 카드 */
+  .cmd-card{background:var(--color-card);border:1px solid var(--color-border);border-radius:14px;padding:1.5rem;margin:1.2rem 0;border-left:5px solid var(--card-color,var(--color-primary))}
+  .cmd-card.c1{--card-color:#64748B}
+  .cmd-card.c2{--card-color:#2563EB}
+  .cmd-card.c3{--card-color:#7C3AED}
+  .cmd-card.c4{--card-color:#D97706}
+  .cmd-card.c5{--card-color:#059669}
+  .cmd-card.c6{--card-color:#2563EB}
+  .cmd-card.c7{--card-color:#7C3AED}
+  .cmd-card.c8{--card-color:#0891B2}
+  .cmd-card.c9{--card-color:#DB2777}
+
+  .cmd-header{display:flex;align-items:center;gap:.7rem;margin-bottom:.7rem}
+  .cmd-badge{background:var(--card-color,var(--color-primary));color:#fff;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;flex-shrink:0}
+  .cmd-title{font-weight:900;font-size:1.1rem;flex:1}
+  .cmd-title .cmd-emoji{margin-right:.3rem}
+  .cmd-title .cmd-sub{display:block;font-size:.85rem;color:var(--color-muted);font-weight:500;margin-top:.1rem}
+
+  /* 터미널 */
+  .terminal{background:var(--color-code);color:#E2E8F0;border-radius:10px;padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.85rem;margin:.7rem 0;position:relative;overflow-x:auto;line-height:1.7}
+  .terminal .prompt{color:#34D399;user-select:none}
+  .terminal .comment{color:#64748B;font-style:italic}
+  .terminal .flag{color:#FBBF24}
+  .terminal .str{color:#F87171}
+  .copy-btn{position:absolute;top:.5rem;right:.5rem;background:rgba(255,255,255,.1);color:#E2E8F0;border:1px solid rgba(255,255,255,.2);padding:.25rem .6rem;border-radius:6px;font-size:.72rem;cursor:pointer;font-family:'Noto Sans KR'}
+  .copy-btn:hover{background:rgba(255,255,255,.2)}
+  .copy-btn.copied{background:#059669;border-color:#059669}
+
+  /* 큰 결과 문장 */
+  .big-easy{font-size:1.05rem;font-weight:700;padding:.8rem 1rem;background:var(--color-success-light);border-left:4px solid var(--color-success);border-radius:6px;margin:.8rem 0}
+  .big-easy::before{content:"▶ ";color:var(--color-success);font-weight:900}
+
+  /* 단계별 풀이 */
+  .steps{background:var(--color-surface);border-radius:10px;padding:1rem 1.2rem;margin:.7rem 0}
+  .steps ol{counter-reset:mini-step;list-style:none;padding-left:0}
+  .steps li{counter-increment:mini-step;position:relative;padding:.4rem 0 .4rem 2rem;font-size:.87rem;line-height:1.55}
+  .steps li::before{content:counter(mini-step);position:absolute;left:0;top:.5rem;width:1.3rem;height:1.3rem;background:var(--card-color,var(--color-primary));color:#fff;border-radius:50%;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+  /* 비유·팁·주의 박스 */
+  .box{display:flex;gap:.75rem;padding:.8rem 1.1rem;border-radius:8px;align-items:flex-start;margin:.8rem 0;font-size:.87rem;line-height:1.6}
+  .box .box-icon{font-size:1.2rem;flex-shrink:0;padding-top:.1rem}
+  .box.tip{background:var(--color-success-light);border-left:3px solid var(--color-success)}
+  .box.warn{background:var(--color-warning-light);border-left:3px solid var(--color-warning)}
+  .box.danger{background:var(--color-danger-light);border-left:3px solid var(--color-danger)}
+  .box.info{background:var(--color-primary-light);border-left:3px solid var(--color-primary)}
+  .box strong{display:block;margin-bottom:.15rem}
+
+  /* 예상 출력 박스 */
+  .expected-output{background:#1F2937;color:#E5E7EB;border-radius:8px;padding:.8rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;margin:.7rem 0;overflow-x:auto;line-height:1.6;border-left:3px solid #10B981}
+  .expected-output .out-label{color:#34D399;font-weight:700;margin-bottom:.4rem;display:block;font-family:'Noto Sans KR'}
+  .expected-output .highlight{color:#FBBF24}
+  .expected-output .success-line{color:#34D399}
+
+  /* 추천 실행 순서 */
+  .order-box{background:linear-gradient(135deg,#F0FDF4,#ECFDF5);border:2px solid var(--color-success);border-radius:14px;padding:1.5rem;margin:1.5rem 0}
+  .order-box h3{color:var(--color-success);margin-bottom:.8rem}
+  .order-steps{display:flex;flex-direction:column;gap:.5rem}
+  .order-step{display:flex;gap:.7rem;align-items:center;padding:.5rem 0;font-size:.9rem}
+  .order-step .os-num{background:var(--color-success);color:#fff;width:1.7rem;height:1.7rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.85rem;flex-shrink:0}
+  .order-step code{background:var(--color-code);color:#34D399;padding:.15rem .5rem;border-radius:4px;font-size:.82rem}
+
+  /* 확인 명령어 카드 */
+  .check-card{background:var(--color-primary-light);border:1px solid var(--color-primary);border-radius:10px;padding:1rem 1.2rem;margin:.7rem 0}
+  .check-card h4{font-size:.9rem;font-weight:900;color:var(--color-primary);margin-bottom:.4rem}
+  .check-card p{font-size:.83rem;margin-bottom:.4rem}
+
+  /* 브라우저 URL 카드 */
+  .browser-url{background:linear-gradient(135deg,#F0FDFA,#ECFDF5);border:2px dashed var(--card-color,var(--color-primary));border-radius:10px;padding:1rem 1.2rem;margin:.7rem 0;text-align:center}
+  .browser-url .url-label{font-size:.8rem;color:var(--color-muted);font-weight:700;margin-bottom:.4rem;display:block}
+  .browser-url a{color:var(--card-color,var(--color-primary));font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:700;text-decoration:none;word-break:break-all}
+  .browser-url a:hover{text-decoration:underline}
+
+  h3{font-size:1.15rem;font-weight:700;margin:1.5rem 0 .7rem}
+  .divider{height:2px;background:linear-gradient(90deg,transparent,var(--color-border),transparent);margin:2rem 0}
+
+  .footer{text-align:center;color:var(--color-muted);font-size:.78rem;padding:2rem 1.5rem;border-top:1px solid var(--color-border)}
+
+  @media print{
+    body{background:#fff}
+    .hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .copy-btn{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- 히어로 -->
+<div class="hero">
+  <span class="badge">🚀 실습 가이드</span>
+  <h1>실습 가이드 run rag pipeline</h1>
+  <p class="subtitle">팀별 실습용 · 서버: <b>192.168.0.75</b> · HTML/MD → 사이드카 JSON → OpenSearch 인덱싱 → 검색</p>
+  <div class="pills">
+    <span class="pill">📄 HTML 처리</span>
+    <span class="pill">📝 MD 처리</span>
+    <span class="pill">🏦 OpenSearch 인덱싱</span>
+    <span class="pill">🔍 하이브리드 검색</span>
+    <span class="pill">🌐 브라우저 확인</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══ 한눈에 보기 ═══ -->
+<section>
+  <h2>📊 <span class="accent">한눈에 보기</span> — 전체 흐름</h2>
+  <p class="lead">전제조건 체크 → CLI 처리/검색 → <b>브라우저 확인</b>까지 <b>10단계</b>로 이루어져요.</p>
+
+  <div class="flow-overview">
+    <div class="flow-svg-wrap">
+      <svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1 L 8 5 L 2 9" fill="none" stroke="#64748B" stroke-width="1.5"/>
+          </marker>
+        </defs>
+
+        <!-- Step 1: 전제조건 -->
+        <rect x="30" y="30" width="130" height="60" rx="10" fill="#F1F5F9" stroke="#64748B" stroke-width="2"/>
+        <circle cx="55" cy="60" r="14" fill="#64748B"/>
+        <text x="55" y="65" text-anchor="middle" fill="#fff" font-family="Noto Sans KR" font-size="12" font-weight="900">1</text>
+        <text x="105" y="55" text-anchor="middle" font-family="Noto Sans KR" font-size="12" font-weight="700" fill="#334155">전제조건</text>
+        <text x="105" y="75" text-anchor="middle" font-family="Noto Sans KR" font-size="10" fill="#64748B">체크</text>
+
+        <line x1="160" y1="60" x2="188" y2="60" stroke="#64748B" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Step 2: HTML 처리 -->
+        <rect x="190" y="30" width="130" height="60" rx="10" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+        <circle cx="215" cy="60" r="14" fill="#2563EB"/>
+        <text x="215" y="65" text-anchor="middle" fill="#fff" font-family="Noto Sans KR" font-size="12" font-weight="900">2</text>
+        <text x="265" y="55" text-anchor="middle" font-family="Noto Sans KR" font-size="12" font-weight="700" fill="#1E40AF">HTML 처리</text>
+        <text x="265" y="75" text-anchor="middle" font-family="Noto Sans KR" font-size="10" fill="#1E40AF">사이드카 생성</text>
+
+        <line x1="320" y1="60" x2="348" y2="60" stroke="#64748B" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Step 3: MD 처리 -->
+        <rect x="350" y="30" width="130" height="60" rx="10" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2"/>
+        <circle cx="375" cy="60" r="14" fill="#7C3AED"/>
+        <text x="375" y="65" text-anchor="middle" fill="#fff" font-family="Noto Sans KR" font-size="12" font-weight="900">3</text>
+        <text x="425" y="55" text-anchor="middle" font-family="Noto Sans KR" font-size="12" font-weight="700" fill="#4C1D95">MD 처리</text>
+        <text x="425" y="75" text-anchor="middle" font-family="Noto Sans KR" font-size="10" fill="#4C1D95">사이드카 생성</text>
+
+        <line x1="480" y1="60" x2="508" y2="60" stroke="#64748B" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Step 4: 인덱싱 -->
+        <rect x="510" y="30" width="180" height="60" rx="10" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+        <circle cx="535" cy="60" r="14" fill="#D97706"/>
+        <text x="535" y="65" text-anchor="middle" fill="#fff" font-family="Noto Sans KR" font-size="12" font-weight="900">4</text>
+        <text x="600" y="55" text-anchor="middle" font-family="Noto Sans KR" font-size="12" font-weight="700" fill="#78350F">OpenSearch 인덱싱</text>
+        <text x="600" y="75" text-anchor="middle" font-family="Noto Sans KR" font-size="10" fill="#78350F">Bulk 업로드</text>
+
+        <!-- 아래로 이동 -->
+        <line x1="600" y1="90" x2="600" y2="128" stroke="#64748B" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Step 5: 검색 테스트 -->
+        <rect x="510" y="130" width="180" height="60" rx="10" fill="#D1FAE5" stroke="#059669" stroke-width="2"/>
+        <circle cx="535" cy="160" r="14" fill="#059669"/>
+        <text x="535" y="165" text-anchor="middle" fill="#fff" font-family="Noto Sans KR" font-size="12" font-weight="900">5</text>
+        <text x="600" y="155" text-anchor="middle" font-family="Noto Sans KR" font-size="12" font-weight="700" fill="#064E3B">검색 테스트</text>
+        <text x="600" y="175" text-anchor="middle" font-family="Noto Sans KR" font-size="10" fill="#064E3B">품질 확인</text>
+
+        <!-- Step 6/7: 확인 명령들 -->
+        <text x="360" y="215" text-anchor="middle" font-family="Noto Sans KR" font-size="12" fill="#64748B" font-style="italic">중간 확인 명령어들</text>
+
+        <rect x="120" y="230" width="230" height="60" rx="10" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+        <circle cx="145" cy="260" r="14" fill="#2563EB"/>
+        <text x="145" y="265" text-anchor="middle" fill="#fff" font-family="Noto Sans KR" font-size="12" font-weight="900">6</text>
+        <text x="240" y="255" text-anchor="middle" font-family="Noto Sans KR" font-size="12" font-weight="700" fill="#1E40AF">사이드카 JSON 개수 확인</text>
+        <text x="240" y="275" text-anchor="middle" font-family="Noto Sans KR" font-size="10" fill="#1E40AF">Step 2·3 확인용</text>
+
+        <rect x="370" y="230" width="230" height="60" rx="10" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2"/>
+        <circle cx="395" cy="260" r="14" fill="#7C3AED"/>
+        <text x="395" y="265" text-anchor="middle" fill="#fff" font-family="Noto Sans KR" font-size="12" font-weight="900">7</text>
+        <text x="490" y="255" text-anchor="middle" font-family="Noto Sans KR" font-size="12" font-weight="700" fill="#4C1D95">OpenSearch 문서 수 확인</text>
+        <text x="490" y="275" text-anchor="middle" font-family="Noto Sans KR" font-size="10" fill="#4C1D95">Step 4 확인용</text>
+
+        <text x="360" y="320" text-anchor="middle" font-family="Noto Sans KR" font-size="11" font-weight="700" fill="#334155">
+          팀 실습: CLI 4단계(dry-run·검색) + 브라우저 확인 2개(5601·8501)
+        </text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="box info">
+    <span class="box-icon">💡</span>
+    <div>
+      <strong>팀 실습 안내</strong>
+      오늘은 서버 <b>192.168.0.75</b>에 접속해서 실습합니다.
+      Step 2·3·4(처리·인덱싱)는 <b>--dry-run</b>으로 미리보기만 하고, Step 5(검색)는 실제로 실행해 결과를 관찰하세요.
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 1. 전제조건 체크 ═══ -->
+<section>
+  <div class="cmd-card c1">
+    <div class="cmd-header">
+      <div class="cmd-badge">1</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">🔍</span> 전제조건 체크
+        <span class="cmd-sub">파이프라인 실행 전 서비스 상태 확인</span>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='curl http://192.168.0.75:9200'>📋 복사</button>
+      <span class="prompt">$ </span>curl http://192.168.0.75:9200
+    </div>
+
+    <div class="big-easy">OpenSearch가 응답하면 JSON이 출력돼요</div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='curl http://192.168.0.75:9200/_cat/indices | grep physical_rag'>📋 복사</button>
+      <span class="prompt">$ </span>curl http://192.168.0.75:9200/_cat/indices | grep physical_rag
+    </div>
+
+    <div class="big-easy">physical_rag 인덱스가 있으면 이름이 표시돼요</div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='curl http://192.168.0.23:11434/api/tags | head -5   # 임베딩관
+curl http://192.168.0.75:11434/api/tags | head -5   # 준비관
+curl http://192.168.0.21:11434/api/tags | head -5   # 생성관
+curl http://192.168.0.36:11434/api/tags | head -5   # 검수관'>📋 복사</button>
+      <span class="prompt">$ </span>curl http://192.168.0.23:11434/api/tags | head -5   <span class="comment"># 임베딩관</span>
+<span class="prompt">$ </span>curl http://192.168.0.75:11434/api/tags | head -5   <span class="comment"># 준비관</span>
+<span class="prompt">$ </span>curl http://192.168.0.21:11434/api/tags | head -5   <span class="comment"># 생성관</span>
+<span class="prompt">$ </span>curl http://192.168.0.36:11434/api/tags | head -5   <span class="comment"># 검수관</span>
+    </div>
+
+    <div class="big-easy">4개관 모두 models 목록이 나오면 준비 완료</div>
+
+    <div class="steps">
+      <ol>
+        <li>OpenSearch(도서관) 응답 확인</li>
+        <li>physical_rag(서고) 존재 확인</li>
+        <li>4개관(임베딩·준비·생성·검수) Ollama 서비스 확인</li>
+      </ol>
+    </div>
+
+    <div class="box warn">
+      <span class="box-icon">⚠️</span>
+      <div>
+        <strong>어느 하나라도 응답 없으면 여기서 멈추세요</strong>
+        다음 단계 진행 전에 서비스를 먼저 살려야 해요.
+        Docker: <code>docker compose ps</code> / Ollama: 4대 PC의 서비스 상태 확인.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 2. 환경 준비 ═══ -->
+<section>
+  <div class="cmd-card c2">
+    <div class="cmd-header">
+      <div class="cmd-badge">2</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">🐍</span> 가상환경 활성화 + 폴더 이동
+        <span class="cmd-sub">rag_venv를 켜고 rag_llm 폴더로 들어가기</span>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='source ~/rag_venv/bin/activate
+cd ~/rag_llm'>📋 복사</button>
+      <span class="prompt">$ </span>source ~/rag_venv/bin/activate
+<span class="prompt">$ </span>cd ~/rag_llm
+    </div>
+
+    <div class="big-easy">프롬프트 앞에 (rag_venv)가 붙으면 성공</div>
+
+    <div class="steps">
+      <ol>
+        <li>RAG 전용 가상환경 켜기 (lerobot과 절대 섞지 않기)</li>
+        <li>스크립트가 있는 rag_llm 폴더로 이동</li>
+      </ol>
+    </div>
+
+    <div class="box tip">
+      <span class="box-icon">💡</span>
+      <div>
+        <strong>비유: 작업복 갈아입기</strong>
+        가상환경은 <b>작업복</b>이에요. RAG용 작업복(rag_venv)과 로봇용 작업복(lerobot)을 따로 두면 서로 안 섞여요.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 3. HTML 처리 ═══ -->
+<section>
+  <div class="cmd-card c3">
+    <div class="cmd-header">
+      <div class="cmd-badge">3</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">📄</span> Step 1a: HTML 처리
+        <span class="cmd-sub">HTML 파일을 사이드카 JSON으로 변환</span>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='python 01_html_processor_v4.py . --dry-run'>📋 복사</button>
+      <span class="prompt">$ </span>python 01_html_processor_v4.py . <span class="flag">--dry-run</span>   <span class="comment"># 팀 실습: 미리보기만 실행</span>
+    </div>
+
+    <div class="big-easy">각 HTML 옆에 {파일명}.rag.json 사이드카가 생겨요</div>
+
+    <div class="expected-output">
+      <span class="out-label">▼ 예상 출력</span>
+🔍 루트: /home/zetabank/rag_llm
+   재귀 탐색 결과: <span class="highlight">30개 HTML 발견</span>
+════════════════════════════════════════════════════
+
+📄 [lekiwi_teleoperation] guide.html
+   카테고리: lekiwi | 섹션: 12개
+   <span class="success-line">✅ 저장 완료 + 사이드카: guide.html.rag.json</span>
+
+📊 프로젝트별 처리 통계
+  📁 dongle_multinet_setup    [network ] HTML 2개 · 섹션 8개
+  📁 feetech_motor_system     [hardware] HTML 1개 · 섹션 25개
+  ...
+<span class="success-line">✅ 전체 완료 — HTML 30개 · 섹션 318개</span>
+    </div>
+
+    <div class="steps">
+      <ol>
+        <li>rag_llm 아래 모든 HTML을 재귀 탐색</li>
+        <li>각 HTML을 파싱해 헤딩·앵커·프래그먼트 추출</li>
+        <li>원본 옆에 {파일명}.rag.json 파일 생성</li>
+      </ol>
+    </div>
+
+    <div class="box tip">
+      <span class="box-icon">📄</span>
+      <div>
+        <strong>--dry-run으로 먼저 확인</strong>
+        실제 저장 없이 몇 개가 처리될지, 어떻게 분류될지 미리 볼 수 있어요.
+        결과가 만족스러우면 그때 --dry-run 없이 실행하세요.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 4. MD 처리 ═══ -->
+<section>
+  <div class="cmd-card c3">
+    <div class="cmd-header">
+      <div class="cmd-badge">4</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">📝</span> Step 1b: MD 처리
+        <span class="cmd-sub">MD 파일을 사이드카 JSON으로 변환 (HTML과 같은 형식)</span>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='python 03_md_processor.py . --dry-run'>📋 복사</button>
+      <span class="prompt">$ </span>python 03_md_processor.py . <span class="flag">--dry-run</span>   <span class="comment"># 팀 실습: 미리보기만 실행</span>
+    </div>
+
+    <div class="big-easy">MD 파일 옆에도 {파일명}.rag.json 사이드카가 생겨요</div>
+
+    <div class="expected-output">
+      <span class="out-label">▼ 예상 출력</span>
+🔍 루트: /home/zetabank/rag_llm
+   MD 파일 발견: <span class="highlight">N개</span>
+════════════════════════════════════════════════════
+
+📄 [knowledge] rag_lekiwi_calibration.md
+   카테고리: rag | 섹션: 4개
+   <span class="success-line">✅ 저장: rag_lekiwi_calibration.md.rag.json</span>
+
+📊 프로젝트별 MD 처리 통계
+  📁 knowledge    [rag] MD N개 · 섹션 M개
+<span class="success-line">✅ 전체 완료 — MD N개 · 섹션 M개</span>
+    </div>
+
+    <div class="steps">
+      <ol>
+        <li>knowledge/ 폴더 등 MD 파일 재귀 탐색</li>
+        <li>YAML frontmatter(--- 사이) 파싱해 메타데이터 추출</li>
+        <li>## ### 헤딩 기준으로 섹션 분할</li>
+        <li>HTML과 똑같은 사이드카 JSON 형식으로 저장</li>
+      </ol>
+    </div>
+
+    <div class="box info">
+      <span class="box-icon">🎯</span>
+      <div>
+        <strong>왜 같은 사이드카 형식으로?</strong>
+        다음 단계 인덱서는 사이드카 파일이 HTML에서 왔는지 MD에서 왔는지 상관 안 해요.
+        같은 형식으로 통일해두면 <b>인덱서 하나로 둘 다 처리</b>됩니다.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 5. OpenSearch 인덱싱 ═══ -->
+<section>
+  <div class="cmd-card c4">
+    <div class="cmd-header">
+      <div class="cmd-badge">5</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">🏦</span> Step 2: OpenSearch 인덱싱
+        <span class="cmd-sub">사이드카 JSON을 벡터화하며 OpenSearch에 업로드</span>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='python 02_indexer.py . --dry-run'>📋 복사</button>
+      <span class="prompt">$ </span>python 02_indexer.py . <span class="flag">--dry-run</span>   <span class="comment"># 팀 실습: 미리보기만 실행</span>
+    </div>
+
+    <div class="big-easy">임베딩관에서 벡터를 받아 OpenSearch에 100개씩 배치 업로드해요</div>
+
+    <div class="expected-output">
+      <span class="out-label">▼ 예상 출력</span>
+🔍 사전 서버 검증...
+<span class="success-line">✅ OpenSearch OK — 인덱스 'physical_rag' 확인됨</span>
+<span class="success-line">✅ 임베딩관 OK — 모델 'bge-m3' 확인됨</span>
+
+🔍 사이드카 JSON 발견: <span class="highlight">(30 + N)개</span>
+📄 [lekiwi_teleoperation] guide.html.rag.json (12개 섹션)
+   진행: 누적 성공 12 / 실패 0
+   📤 배치 업로드: 성공 100 / 실패 0
+...
+
+📊 프로젝트별 인덱싱 결과
+  📁 dongle_multinet_setup    섹션 8   · 성공 8   · 실패 0
+  📁 feetech_motor_system     섹션 25  · 성공 25  · 실패 0
+  ...
+
+<span class="success-line">✅ 인덱싱 완료</span>
+   · 전체 섹션: <span class="highlight">(318 + M)</span>
+   · 성공: <span class="highlight">(318 + M)</span>
+   · 실패: 0
+   · 소요 시간: 약 45~60초
+
+📈 OpenSearch 최종 확인:
+   · physical_rag 총 문서 수: <span class="highlight">(318 + M)개</span>
+    </div>
+
+    <div class="steps">
+      <ol>
+        <li>사전 검증(OpenSearch, 임베딩관 응답 확인)</li>
+        <li>모든 *.rag.json 재귀 탐색</li>
+        <li>각 섹션을 임베딩관(3070)에 보내 1024차원 벡터로 변환</li>
+        <li>메타 + 벡터를 하나의 문서로 조립</li>
+        <li>100개씩 묶어 Bulk API로 OpenSearch에 업로드</li>
+      </ol>
+    </div>
+
+    <div class="box tip">
+      <span class="box-icon">🚚</span>
+      <div>
+        <strong>Bulk = 컨테이너 배송</strong>
+        하나씩 300번 왕복하지 않고 100개씩 3번 왕복해요. <b>10~20배 빠릅니다.</b>
+      </div>
+    </div>
+
+    <div class="box warn">
+      <span class="box-icon">⏱️</span>
+      <div>
+        <strong>재실행해도 안전 (덮어쓰기)</strong>
+        같은 자료를 다시 인덱싱하면 doc_id가 같아서 <b>덮어쓰기</b> 됩니다. 중복 문서 안 쌓여요.
+        다만 45~60초는 다시 걸립니다 (증분 인덱싱은 규모 커지면 도입).
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 6. 검색 테스트 ═══ -->
+<section>
+  <div class="cmd-card c5">
+    <div class="cmd-header">
+      <div class="cmd-badge">6</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">🔍</span> Step 3: 검색 테스트
+        <span class="cmd-sub">하이브리드 검색(BM25 + kNN) 결과 확인</span>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='python 03_search.py "모터제어"'>📋 복사</button>
+      <span class="prompt">$ </span>python 03_search.py <span class="str">"모터제어"</span>   <span class="comment"># 팀 실습 공통 검색어</span>
+    </div>
+
+    <div class="big-easy">관련도 순으로 5개 결과와 이중 조준 URL이 나와요</div>
+
+    <div class="expected-output">
+      <span class="out-label">▼ 예상 출력</span>
+🔍 '모터제어' 검색 결과 — 5건
+══════════════════════════════════════════════════════════════════════
+
+[1] 점수: 3.712  |  [hardware] feetech_motor_system
+    📄 ⚙️ Feetech STS3215 모터 제어 기초
+    🔖 anchor: sec-3-모터제어-기초
+    📝 미리보기: SO-ARM101 로봇 팔의 <span class="highlight">&lt;em&gt;모터제어&lt;/em&gt;</span>는 시리얼 통신으로 위치·속도·토크를...
+    🔗 http://192.168.0.75:8000/feetech_motor_system/html/motor_ref.html<span class="highlight">#sec-3-모터제어-기초:~:text=모터제어</span>
+
+[2] 점수: 2.984  |  [lekiwi] lekiwi_teleoperation
+    📄 🚗 LeKiwi 바퀴 모터제어 흐름
+    ...
+    </div>
+
+    <div class="steps">
+      <ol>
+        <li>질문을 임베딩관에 보내 벡터로 변환</li>
+        <li>OpenSearch에서 BM25(단어) + kNN(의미) 동시 검색</li>
+        <li>상위 5개 결과에 highlight 미리보기 추가</li>
+        <li>relative_path + anchor + fragment 조합으로 이중 조준 URL 생성</li>
+      </ol>
+    </div>
+
+    <div class="box tip">
+      <span class="box-icon">🎯</span>
+      <div>
+        <strong>이중 조준 URL</strong>
+        브라우저에서 링크 클릭하면 <b>정확한 섹션까지 스크롤</b>되고 검색어에 <b>노란 형광펜</b>이 자동으로 그어져요.
+        파일 서버(<code>python3 -m http.server 8000</code>)가 켜져있어야 브라우저로 열 수 있어요.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 7. 사이드카 개수 확인 ═══ -->
+<section>
+  <div class="cmd-card c6">
+    <div class="cmd-header">
+      <div class="cmd-badge">7</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">📦</span> 확인 명령: 사이드카 JSON 개수
+        <span class="cmd-sub">Step 3·4 사이에 사이드카가 잘 만들어졌는지 검증</span>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='find ~/rag_llm -name "*.rag.json" | head -10
+find ~/rag_llm -name "*.rag.json" | wc -l'>📋 복사</button>
+      <span class="prompt">$ </span>find ~/rag_llm -name <span class="str">"*.rag.json"</span> | head -10   <span class="comment"># 샘플 10개</span>
+<span class="prompt">$ </span>find ~/rag_llm -name <span class="str">"*.rag.json"</span> | wc -l       <span class="comment"># 총 개수</span>
+    </div>
+
+    <div class="big-easy">사이드카 파일 목록과 총 개수가 나와요</div>
+
+    <div class="expected-output">
+      <span class="out-label">▼ 예상 출력</span>
+/home/zetabank/rag_llm/lekiwi_teleoperation/html/guide.html.rag.json
+/home/zetabank/rag_llm/feetech_motor_system/html/motor_ref.html.rag.json
+/home/zetabank/rag_llm/knowledge/rag_lekiwi_calibration.md.rag.json
+...
+
+<span class="highlight">30</span>   <span class="comment"># HTML 30개 처리했으면 30, MD 추가되면 더 많이</span>
+    </div>
+
+    <div class="steps">
+      <ol>
+        <li>rag_llm 폴더 아래 *.rag.json 파일 검색</li>
+        <li>샘플 10개로 어느 폴더에 있는지 확인</li>
+        <li>총 개수 세기 → HTML+MD 합계와 맞는지 확인</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 8. OpenSearch 문서 수 확인 ═══ -->
+<section>
+  <div class="cmd-card c7">
+    <div class="cmd-header">
+      <div class="cmd-badge">8</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">📈</span> 확인 명령: OpenSearch 문서 수
+        <span class="cmd-sub">Step 5 이후 실제 인덱스에 들어간 문서 개수 확인</span>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='curl http://192.168.0.75:9200/physical_rag/_count'>📋 복사</button>
+      <span class="prompt">$ </span>curl http://192.168.0.75:9200/physical_rag/_count
+    </div>
+
+    <div class="big-easy">JSON으로 총 문서 개수(count)가 나와요</div>
+
+    <div class="expected-output">
+      <span class="out-label">▼ 예상 출력</span>
+{
+  "count": <span class="highlight">318</span>,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  }
+}
+    </div>
+
+    <div class="steps">
+      <ol>
+        <li>OpenSearch에 _count API로 문서 총 개수 질의</li>
+        <li>인덱싱 결과 리포트의 성공 개수와 일치 확인</li>
+        <li>만약 다르면 실패 로그를 다시 살펴보기</li>
+      </ol>
+    </div>
+
+    <div class="box tip">
+      <span class="box-icon">🔍</span>
+      <div>
+        <strong>더 자세한 확인 (프로젝트별)</strong>
+        아래 명령어로 프로젝트별 문서 수도 볼 수 있어요.
+      </div>
+    </div>
+
+    <div class="terminal">
+      <button class="copy-btn" data-copy='curl -X POST http://192.168.0.75:9200/physical_rag/_search -H "Content-Type: application/json" -d "{\"size\":0,\"aggs\":{\"by_project\":{\"terms\":{\"field\":\"project\",\"size\":20}}}}"'>📋 복사</button>
+      <span class="prompt">$ </span>curl -X POST http://192.168.0.75:9200/physical_rag/_search \
+    -H <span class="str">"Content-Type: application/json"</span> \
+    -d <span class="str">'{"size":0,"aggs":{"by_project":{"terms":{"field":"project","size":20}}}}'</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 9. OpenSearch Dashboards 브라우저 확인 ═══ -->
+<section>
+  <div class="cmd-card c8">
+    <div class="cmd-header">
+      <div class="cmd-badge">9</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">🌐</span> 브라우저 확인 ①: OpenSearch Dashboards
+        <span class="cmd-sub">인덱스·문서·매핑을 GUI로 시각적 확인</span>
+      </div>
+    </div>
+
+    <div class="browser-url" style="--card-color:#0891B2">
+      <span class="url-label">🌐 브라우저 주소창에 입력</span>
+      <a href="http://192.168.0.75:5601/" target="_blank">http://192.168.0.75:5601/</a>
+    </div>
+
+    <div class="big-easy">OpenSearch Dashboards 홈 화면이 뜨면 접속 성공</div>
+
+    <div class="steps">
+      <ol>
+        <li>왼쪽 메뉴 → <b>Discover</b>: physical_rag 인덱스 선택 → 실제 문서 내용 탐색</li>
+        <li>왼쪽 메뉴 → <b>Dev Tools</b>: 검색 쿼리를 직접 작성해 실험 가능</li>
+        <li>왼쪽 메뉴 → <b>Index Management</b>: 인덱스 상태·문서 수·매핑(스키마) 확인</li>
+        <li>Discover에서 project 필드로 필터링 → 팀별 자료가 어디에 있는지 눈으로 확인</li>
+      </ol>
+    </div>
+
+    <div class="box tip">
+      <span class="box-icon">🔎</span>
+      <div>
+        <strong>비유: 도서관 사서 콘솔</strong>
+        curl은 <b>전화로 문의</b>, Dashboards는 <b>사서 데스크에 직접 가서 서고를 눈으로 보는 것</b>이에요.
+        오늘 실습에서 처리·인덱싱된 데이터가 <b>실제로 어떻게 저장됐는지</b> 시각적으로 확인하세요.
+      </div>
+    </div>
+
+    <div class="box info">
+      <span class="box-icon">💡</span>
+      <div>
+        <strong>추천 확인 포인트</strong>
+        • 총 문서 수가 curl <code>_count</code>와 일치하는지<br>
+        • <code>title</code>·<code>preview</code>·<code>anchor</code> 필드가 잘 채워져 있는지<br>
+        • <code>project</code>별 문서 분포가 균형적인지<br>
+        • <code>embedding</code> 필드가 1024차원 벡터로 존재하는지
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 10. 피지컬 AI 지식 시스템 브라우저 확인 ═══ -->
+<section>
+  <div class="cmd-card c9">
+    <div class="cmd-header">
+      <div class="cmd-badge">10</div>
+      <div class="cmd-title">
+        <span class="cmd-emoji">🤖</span> 브라우저 확인 ②: 피지컬 AI 지식 시스템
+        <span class="cmd-sub">Streamlit 챗봇 UI — 5단계 RAG 파이프라인 대화형 체험</span>
+      </div>
+    </div>
+
+    <div class="browser-url" style="--card-color:#DB2777">
+      <span class="url-label">🌐 브라우저 주소창에 입력</span>
+      <a href="http://192.168.0.75:8501/" target="_blank">http://192.168.0.75:8501/</a>
+    </div>
+
+    <div class="big-easy">피지컬 AI 지식 시스템 챗봇 화면이 뜨면 접속 성공</div>
+
+    <div class="steps">
+      <ol>
+        <li>질문 입력창에 <b>"모터제어"</b> 입력 → 방금 CLI에서 실행한 것과 같은 검색</li>
+        <li>상단 파이프라인 진행 스트립: <b>HyDE → 검색 → 생성 → 검수 → 완료</b> 5단계 표시</li>
+        <li>답변 아래 <b>🏢 사내만</b> 또는 <b>🏢 사내 + 🌐 외부</b> 뱃지로 출처 범위 확인</li>
+        <li>사이드바 → 심층 학습 추천 자료(권위 있는 PDF/리포트) 확인</li>
+      </ol>
+    </div>
+
+    <div class="box tip">
+      <span class="box-icon">🚦</span>
+      <div>
+        <strong>4개관 협업이 여기서 다 보여요</strong>
+        임베딩관(3070) → 준비관(4090) → 생성관(5090) → 검수관(4070) 순서로 <b>역할 분담된 GPU 4대</b>가
+        하나의 질문에 협업하는 과정이 파이프라인 스트립에 실시간으로 나타납니다.
+      </div>
+    </div>
+
+    <div class="box info">
+      <span class="box-icon">🎯</span>
+      <div>
+        <strong>실습 체크리스트 (팀별)</strong>
+        • 팀별 최소 3개 질문 던져보기 (내부 자료 관련 1 + 외부 확장 필요 1 + 애매한 것 1)<br>
+        • Cascade 임계값(0.75) 발동 여부 관찰: <b>🌐 외부</b> 뱃지가 언제 뜨는지<br>
+        • 답변 하단 <b>피드백 위젯</b>(👍/👎)이 있으면 눌러보기 → 자기학습 루프의 첫 데이터
+      </div>
+    </div>
+
+    <div class="box warn">
+      <span class="box-icon">⚠️</span>
+      <div>
+        <strong>접속 안 될 때</strong>
+        Streamlit 앱이 안 떠 있으면 강사에게 알려주세요.
+        서버에서 <code>streamlit run app_streamlit.py --server.address=0.0.0.0 --server.port=8501</code> 재시작 필요.
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 팀 실습 실행 순서 ═══ -->
+<section>
+  <h2>🎯 <span class="accent">팀 실습 실행 순서</span> — 4개 명령어 + 2개 브라우저</h2>
+  <p class="lead">각 팀이 이 순서대로 진행하세요. 처리·인덱싱은 <b>dry-run</b>으로 미리보기, 검색은 <b>실제 실행</b>, 마지막에 <b>브라우저 2개</b>로 시각적 확인합니다.</p>
+
+  <div class="order-box">
+    <h3>🚀 팀별 실행 6단계</h3>
+    <div class="order-steps">
+      <div class="order-step">
+        <div class="os-num">1</div>
+        <span>HTML 처리(미리보기) — <code>python 01_html_processor_v4.py . --dry-run</code></span>
+      </div>
+      <div class="order-step">
+        <div class="os-num">2</div>
+        <span>MD 처리(미리보기) — <code>python 03_md_processor.py . --dry-run</code></span>
+      </div>
+      <div class="order-step">
+        <div class="os-num">3</div>
+        <span>인덱싱(미리보기) — <code>python 02_indexer.py . --dry-run</code></span>
+      </div>
+      <div class="order-step">
+        <div class="os-num">4</div>
+        <span>검색 실행 — <code>python 03_search.py "모터제어"</code></span>
+      </div>
+      <div class="order-step">
+        <div class="os-num">5</div>
+        <span>브라우저 확인 ① OpenSearch Dashboards — <code>http://192.168.0.75:5601/</code></span>
+      </div>
+      <div class="order-step">
+        <div class="os-num">6</div>
+        <span>브라우저 확인 ② 피지컬 AI 지식 시스템 — <code>http://192.168.0.75:8501/</code></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="terminal">
+    <button class="copy-btn" data-copy='# 팀 실습 — 순서대로 실행 (CLI 4단계)
+python 01_html_processor_v4.py . --dry-run
+python 03_md_processor.py . --dry-run
+python 02_indexer.py . --dry-run
+python 03_search.py "모터제어"
+
+# 브라우저 확인 2개
+# http://192.168.0.75:5601/   ← OpenSearch Dashboards
+# http://192.168.0.75:8501/   ← 피지컬 AI 지식 시스템 (Streamlit)'>📋 전체 복사</button>
+<span class="comment"># 팀 실습 — 순서대로 실행 (CLI 4단계)</span>
+<span class="prompt">$ </span>python 01_html_processor_v4.py . <span class="flag">--dry-run</span>
+<span class="prompt">$ </span>python 03_md_processor.py . <span class="flag">--dry-run</span>
+<span class="prompt">$ </span>python 02_indexer.py . <span class="flag">--dry-run</span>
+<span class="prompt">$ </span>python 03_search.py <span class="str">"모터제어"</span>
+
+<span class="comment"># 브라우저 확인 2개</span>
+<span class="comment"># http://192.168.0.75:5601/   ← OpenSearch Dashboards</span>
+<span class="comment"># http://192.168.0.75:8501/   ← 피지컬 AI 지식 시스템 (Streamlit)</span>
+  </div>
+
+  <div class="box info">
+    <span class="box-icon">🎁</span>
+    <div>
+      <strong>왜 dry-run만?</strong>
+      팀별로 여러 명이 동시에 실행하면 같은 인덱스에 중복 쓰기가 발생할 수 있어요.
+      <b>미리보기(dry-run)</b>로 각 단계에서 어떤 데이터가 어떻게 처리되는지 <b>관찰·이해</b>하는 것이 오늘 실습 목표입니다.
+      실제 인덱싱은 강사가 통합 실행합니다.
+    </div>
+  </div>
+
+  <div class="box tip">
+    <span class="box-icon">🔎</span>
+    <div>
+      <strong>검색·브라우저는 자유롭게 반복</strong>
+      Step 4의 <code>python 03_search.py</code>, Step 5·6의 브라우저 확인은 모두 <b>읽기 요청</b>이라 팀 간 간섭이 없습니다.
+      여러 검색어로 반복해보고, Dashboards와 Streamlit UI에서 결과가 어떻게 다른지 비교해보세요.
+    </div>
+  </div>
+
+  <div class="box info">
+    <span class="box-icon">🎓</span>
+    <div>
+      <strong>CLI → GUI 학습 흐름의 의미</strong>
+      CLI(<code>03_search.py</code>)는 <b>내부 동작</b>을 보여주고,
+      Dashboards(5601)는 <b>저장 구조</b>를 보여주고,
+      Streamlit(8501)은 <b>최종 사용자 경험</b>을 보여줍니다.
+      같은 데이터를 세 가지 관점에서 관찰하면 RAG 시스템의 전체 그림이 잡혀요.
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══ 문제 해결 ═══ -->
+<section>
+  <h2>🔧 <span class="accent">문제 해결</span> — 자주 겪는 상황</h2>
+
+  <div class="check-card">
+    <h4>❓ Step 5(인덱싱)에서 "인덱스가 없습니다" 에러가 나요</h4>
+    <p>physical_rag 인덱스를 아직 안 만드셨어요. 먼저 create_index.sh를 실행하세요.</p>
+    <div class="terminal">
+      <button class="copy-btn" data-copy='bash ~/opensearch/create_index.sh http://192.168.0.75:9200'>📋 복사</button>
+      <span class="prompt">$ </span>bash ~/opensearch/create_index.sh http://192.168.0.75:9200
+    </div>
+  </div>
+
+  <div class="check-card">
+    <h4>❓ 임베딩관 응답 없음 에러</h4>
+    <p>임베딩관(192.168.0.23) PC의 Ollama 서비스가 꺼져있어요.</p>
+    <div class="terminal">
+      <button class="copy-btn" data-copy='# 임베딩관 PC에 SSH로 접속 후
+sudo systemctl status ollama
+sudo systemctl restart ollama'>📋 복사</button>
+<span class="comment"># 임베딩관 PC에 SSH로 접속 후</span>
+<span class="prompt">$ </span>sudo systemctl status ollama
+<span class="prompt">$ </span>sudo systemctl restart ollama
+    </div>
+  </div>
+
+  <div class="check-card">
+    <h4>❓ 검색 결과가 이상해요 (관련 없는 내용이 나옴)</h4>
+    <p>여러 원인이 있을 수 있어요. 아래 순서로 확인:</p>
+    <ol style="margin-left:1.3rem;font-size:.85rem;line-height:1.7">
+      <li>OpenSearch 문서 수가 예상대로인지 확인 (<code>curl http://192.168.0.75:9200/physical_rag/_count</code>)</li>
+      <li>사이드카 JSON을 열어서 title/preview가 잘 뽑혔는지 확인</li>
+      <li>그 주제 자료가 실제로 있는지 확인 (없으면 자료 추가 필요)</li>
+      <li>Nori 분석 결과 확인 (curl로 _analyze API 호출)</li>
+    </ol>
+  </div>
+
+  <div class="box danger">
+    <span class="box-icon">🚫</span>
+    <div>
+      <strong>절대 하면 안 되는 것</strong>
+      • rag_venv 안에서 lerobot 라이브러리 설치 (섞이면 로봇이 안 도는 사고 발생)<br>
+      • 실행 중인 인덱싱을 Ctrl+C로 중간에 끊기 (부분 인덱싱 상태로 남음)<br>
+      • OpenSearch 데이터 폴더(./data)를 삭제 (모든 인덱스 소실)
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="footer">
+  제타위성로보틱스 · RAG 파이프라인 실습 가이드 · 2026-07-14
+</div>
+
+<script>
+  // 복사 버튼 동작
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = btn.getAttribute('data-copy');
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        btn.textContent = '✓ 복사됨';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove('copied');
+        }, 1500);
+      } catch (err) {
+        // 폴백: 텍스트 영역 사용
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        btn.textContent = '✓ 복사됨';
+        setTimeout(() => btn.textContent = '📋 복사', 1500);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
